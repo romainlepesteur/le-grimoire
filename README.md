@@ -29,7 +29,7 @@ Prérequis : [Node.js LTS](https://nodejs.org) et Git.
 ```bash
 npm install
 npm run dev        # serveur de développement (http://localhost:5173, accessible sur le réseau local)
-npm test           # tests : logique, données, sauvegardes, interface de bout en bout
+npm test           # tests : logique, données, sauvegardes, intégration de l’interface (jsdom)
 npm run build      # version de production dans dist/
 npm run preview    # sert dist/ (http://localhost:4173) — permet de tester le hors-ligne
 ```

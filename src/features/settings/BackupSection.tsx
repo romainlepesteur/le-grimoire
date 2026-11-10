@@ -64,13 +64,23 @@ export function BackupSection({ campaign }: { campaign: Campaign }) {
         download(res.blob, res.filename);
       }
       await updateSettings({ lastExportAt: Date.now() });
-      toast({
-        tone: res.missingMedia.length ? 'warning' : 'success',
-        title: 'Sauvegarde exportée',
-        message: res.missingMedia.length
-          ? `${res.missingMedia.length} média(s) introuvable(s) n’ont pas pu être inclus.`
-          : `${res.filename} — ${formatBytes(res.blob.size)}, ${res.mediaCount} média(s).`,
-      });
+      if (res.partial) {
+        // Restaurable, mais incomplète : on le dit clairement, et le message reste affiché.
+        toast({
+          tone: 'warning',
+          duration: 0,
+          title: 'Sauvegarde PARTIELLE exportée',
+          message: `${res.missingMedia.length} média(s) dont le fichier manque sur cet appareil ont été retirés de l’archive (${res.missingMedia
+            .slice(0, 4)
+            .join(', ')}${res.missingMedia.length > 4 ? '…' : ''}). Tout le reste est sauvegardé et restaurable.`,
+        });
+      } else {
+        toast({
+          tone: 'success',
+          title: 'Sauvegarde exportée et vérifiée',
+          message: `${res.filename} — ${formatBytes(res.blob.size)}, ${res.mediaCount} média(s).`,
+        });
+      }
     } catch (e) {
       setError(describeError(e));
     } finally {
@@ -202,6 +212,17 @@ export function BackupSection({ campaign }: { campaign: Campaign }) {
               {preview.counts.ambiances} ambiance(s) · {preview.counts.characters} fiche(s) · {preview.counts.items} objet(s) ·{' '}
               {preview.counts.journal} entrée(s) de journal
             </p>
+            <p className="text-base text-forest-700">Fichier vérifié : sommes de contrôle et références cohérentes.</p>
+            {preview.corrections.length > 0 && (
+              <div className="rounded-md border border-ember-500/40 bg-ember-500/10 px-3 py-2 text-base text-ink-700">
+                Corrections appliquées à l’import (éléments visant ce qui a été supprimé depuis) :
+                <ul className="mt-1 list-disc pl-5">
+                  {preview.corrections.map((c) => (
+                    <li key={c}>{c}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {preview.existing ? (
               <p className="rounded-md border border-blood-500/40 bg-blood-500/10 px-3 py-2 text-base text-blood-600">
                 Cette campagne existe déjà sur cet appareil (« {preview.existing.name} », modifiée le{' '}

@@ -105,3 +105,16 @@ describe('chance', () => {
     expect(luckMax(sheet(), { ...rules, luck: { enabled: false, abilityId: 'chance' } })).toBe(0);
   });
 });
+
+describe('relancer le dernier (régression)', () => {
+  it('refait un jet de fiche, même relancé par la chance, depuis ses données et non son libellé', async () => {
+    const { replaySpec } = await import('./dice');
+    const first = rollCheck(rules, 'Aldric — Force', [{ label: 'Force', value: 2 }], { dc: 15 }, seq(5));
+    expect(first.formula).toBe('Aldric — Force : 1d20+2'); // illisible comme formule
+    const luck = rerollWithLuck(first, rules, {}, seq(14));
+    expect(replaySpec(luck)).toEqual({ spec: { groups: [{ count: 1, sides: 20 }], modifier: 2 }, mode: 'normal' });
+    const adv = rollCheck(rules, 'X', [{ label: 'Dex', value: 1 }], { mode: 'avantage' }, seq(3, 9));
+    expect(replaySpec(adv)).toEqual({ spec: { groups: [{ count: 1, sides: 20 }], modifier: 1 }, mode: 'avantage' });
+    expect(replaySpec(rerollWithLuck(adv, rules, {}, seq(2, 4))).spec.groups).toEqual([{ count: 1, sides: 20 }]);
+  });
+});

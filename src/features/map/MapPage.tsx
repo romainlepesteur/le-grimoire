@@ -229,7 +229,7 @@ export function MapPage() {
             } else setPlacing({ x, y });
           }}
           onMoveMarker={(id, x, y) => void saveMarker(campaign.id, id, { mapId: map.id, x, y })}
-          onFogChange={(url) => void saveFogMask(map.id, url)}
+          onFogChange={(mapId, url) => void saveFogMask(mapId, url)}
           onUndoChange={setCanUndo}
           apiRef={api}
         />

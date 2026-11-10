@@ -5,7 +5,7 @@ import { newId } from '@/domain/ids';
 import type { Character, Stat } from '@/domain/schemas';
 import { useMediaUrl } from '@/hooks/useMediaUrl';
 import { addMedia, deleteMediaIfUnused } from '@/services/db/media';
-import { patchCharacter } from '@/services/db/play';
+import { addCondition, patchCharacter, patchStat, removeCondition, setCoin } from '@/services/db/play';
 import { prepareImage } from '@/services/media/image';
 import { toast } from '@/stores/toasts';
 import { cn } from '@/ui/cn';
@@ -94,7 +94,7 @@ export function Conditions({ character, light }: { character: Character; light?:
   const add = () => {
     const t = text.trim();
     if (!t || character.conditions.some((c) => c.toLowerCase() === t.toLowerCase())) return setText('');
-    void patchCharacter(character.id, { conditions: [...character.conditions, t.slice(0, 60)] });
+    void addCondition(character.id, t).catch((e: Error) => toast({ tone: 'error', title: 'Modification impossible', message: e.message }));
     setText('');
   };
   return (
@@ -108,7 +108,7 @@ export function Conditions({ character, light }: { character: Character; light?:
             initial={{ opacity: 0, scale: 0.7 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.7 }}
-            onClick={() => void patchCharacter(character.id, { conditions: character.conditions.filter((x) => x !== c) })}
+            onClick={() => void removeCondition(character.id, c).catch((e: Error) => toast({ tone: 'error', title: 'Modification impossible', message: e.message }))}
             className="flex h-9 items-center gap-1 rounded-full border border-ember-500/60 bg-ember-500/15 pl-3 pr-2 text-base text-ember-500"
             title="Retirer cet état"
           >
@@ -138,7 +138,7 @@ export function Conditions({ character, light }: { character: Character; light?:
 
 /** Bourse : pièces d'or, d'argent et de cuivre. */
 export function Coins({ character, light }: { character: Character; light?: boolean }) {
-  const set = (k: 'po' | 'pa' | 'pc', v: number) => void patchCharacter(character.id, { coins: { ...character.coins, [k]: Math.max(0, Math.round(v) || 0) } });
+  const set = (k: 'po' | 'pa' | 'pc', v: number) => void setCoin(character.id, k, v).catch((e: Error) => toast({ tone: 'error', title: 'Modification impossible', message: e.message }));
   const coins: { k: 'po' | 'pa' | 'pc'; label: string; color: string }[] = [
     { k: 'po', label: 'Or', color: 'bg-gold-300' },
     { k: 'pa', label: 'Argent', color: 'bg-parchment-300' },
@@ -220,7 +220,7 @@ export function AutoNotes({ character, light, rows = 5 }: { character: Character
 
 /** Caractéristiques libres (Force 14, Agilité +2, Niveau 3…), modifiables en mode édition. */
 export function Stats({ character, editing, light }: { character: Character; editing: boolean; light?: boolean }) {
-  const save = (stats: Stat[]) => void patchCharacter(character.id, { stats });
+  const save = (statId: string, p: Partial<Stat> | null) => void patchStat(character.id, statId, p).catch((e: Error) => toast({ tone: 'error', title: 'Modification impossible', message: e.message }));
   if (!editing) {
     if (!character.stats.length) return <p className={cn('text-base italic', light ? 'text-ink-500' : 'text-parchment-400')}>Aucune caractéristique (bouton Modifier).</p>;
     return (
@@ -236,26 +236,26 @@ export function Stats({ character, editing, light }: { character: Character; edi
   }
   return (
     <div className="space-y-1.5">
-      {character.stats.map((s, i) => (
+      {character.stats.map((s) => (
         <div key={s.id} className="flex gap-2">
           <input
             defaultValue={s.label}
             placeholder="Libellé"
             maxLength={60}
-            onBlur={(e) => e.target.value !== s.label && save(character.stats.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))}
+            onBlur={(e) => e.target.value !== s.label && save(s.id, { label: e.target.value })}
             className={cn(inputClass(light), 'h-11 flex-[2]')}
           />
           <input
             defaultValue={s.value}
             placeholder="Valeur"
             maxLength={60}
-            onBlur={(e) => e.target.value !== s.value && save(character.stats.map((x, j) => (j === i ? { ...x, value: e.target.value } : x)))}
+            onBlur={(e) => e.target.value !== s.value && save(s.id, { value: e.target.value })}
             className={cn(inputClass(light), 'h-11 flex-1 text-center')}
           />
           <button
             type="button"
             aria-label="Retirer"
-            onClick={() => save(character.stats.filter((_, j) => j !== i))}
+            onClick={() => save(s.id, null)}
             className={cn('flex size-11 shrink-0 items-center justify-center rounded-md', light ? 'text-ink-500 hover:text-blood-600' : 'text-parchment-400 hover:text-blood-500')}
           >
             <Trash2 className="size-5" />
@@ -264,7 +264,7 @@ export function Stats({ character, editing, light }: { character: Character; edi
       ))}
       <button
         type="button"
-        onClick={() => save([...character.stats, { id: newId('stat'), label: '', value: '' }])}
+        onClick={() => save(newId('stat'), {})}
         className={cn('flex h-11 items-center gap-2 rounded-md px-3 text-base', light ? 'text-bronze-700 hover:bg-ink-900/5' : 'text-gold-300 hover:bg-parchment-100/5')}
       >
         <Plus className="size-5" /> Ajouter une caractéristique

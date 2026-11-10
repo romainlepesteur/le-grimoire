@@ -20,7 +20,9 @@ export interface ZipEntry {
   size: number;
   compressedSize: number;
   method: number;
-  /** Contenu décompressé. */
+  /** Somme de contrôle annoncée par l'archive. */
+  crc32: number;
+  /** Contenu décompressé, après vérification de sa taille et de sa somme de contrôle. */
   blob(type?: string): Promise<Blob>;
 }
 
@@ -134,6 +136,9 @@ export async function writeZip(entries: ZipInputEntry[]): Promise<Blob> {
 
 // --- Lecture -----------------------------------------------------------------
 
+/** Plafond par fichier d'archive (une illustration ou une musique très lourde reste bien en dessous). */
+const MAX_ENTRY_BYTES = 512 * 1024 * 1024;
+
 async function bytesOf(blob: Blob, start: number, end: number): Promise<Uint8Array> {
   return new Uint8Array(await blob.slice(start, end).arrayBuffer());
 }
@@ -171,6 +176,7 @@ export async function readZip(file: Blob): Promise<Map<string, ZipEntry>> {
       throw new ZipFormatError('Archive ZIP endommagée (répertoire central invalide).');
     }
     const method = cv.getUint16(p + 10, true);
+    const crc32 = cv.getUint32(p + 16, true);
     const compressedSize = cv.getUint32(p + 20, true);
     const size = cv.getUint32(p + 24, true);
     const nameLen = cv.getUint16(p + 28, true);
@@ -182,11 +188,19 @@ export async function readZip(file: Blob): Promise<Map<string, ZipEntry>> {
 
     if (name.endsWith('/')) continue; // dossier
 
+    if (size > MAX_ENTRY_BYTES) throw new ZipFormatError(`Fichier « ${name} » trop volumineux pour être importé.`);
+    // Taux de compression impossible pour du deflate : archive piégée ou endommagée.
+    if (method === 8 && size > compressedSize * 1100 + 1024) {
+      throw new ZipFormatError(`Fichier « ${name} » invalide (taille annoncée incohérente).`);
+    }
+    if (method === 0 && size !== compressedSize) throw new ZipFormatError(`Fichier « ${name} » endommagé (taille incohérente).`);
+
     const entry: ZipEntry = {
       name,
       size,
       compressedSize,
       method,
+      crc32,
       async blob(type = '') {
         const header = await bytesOf(file, localOffset, localOffset + 30);
         const hv = new DataView(header.buffer, header.byteOffset, header.byteLength);
@@ -194,13 +208,27 @@ export async function readZip(file: Blob): Promise<Map<string, ZipEntry>> {
           throw new ZipFormatError(`Entrée « ${name} » endommagée.`);
         }
         const start = localOffset + 30 + hv.getUint16(26, true) + hv.getUint16(28, true);
+        if (start + compressedSize > file.size) throw new ZipFormatError(`Entrée « ${name} » tronquée.`);
         const raw = file.slice(start, start + compressedSize, type);
-        if (method === 0) return raw;
-        if (method === 8) {
-          const out = inflateSync(new Uint8Array(await raw.arrayBuffer()));
-          return new Blob([out as Uint8Array<ArrayBuffer>], { type });
+        let out: Blob;
+        if (method === 0) out = raw;
+        else if (method === 8) {
+          // Tampon de la taille annoncée : la décompression ne peut pas grossir au-delà.
+          let inflated: Uint8Array;
+          try {
+            inflated = inflateSync(new Uint8Array(await raw.arrayBuffer()), { out: new Uint8Array(size) });
+          } catch {
+            throw new ZipFormatError(`Fichier « ${name} » endommagé (décompression impossible).`);
+          }
+          out = new Blob([inflated as Uint8Array<ArrayBuffer>], { type });
+        } else {
+          throw new ZipFormatError(`Méthode de compression non prise en charge pour « ${name} ».`);
         }
-        throw new ZipFormatError(`Méthode de compression non prise en charge pour « ${name} ».`);
+        if (out.size !== size) throw new ZipFormatError(`Fichier « ${name} » endommagé (taille incorrecte).`);
+        if ((await crc32OfBlob(out)) !== crc32) {
+          throw new ZipFormatError(`Fichier « ${name} » altéré : sa somme de contrôle ne correspond pas.`);
+        }
+        return out;
       },
     };
     entries.set(name, entry);

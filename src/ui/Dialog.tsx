@@ -1,10 +1,11 @@
-import { useEffect, type ReactNode } from 'react';
+import { useId, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { Button } from './Button';
 import { Panel } from './Panel';
 import { EASE_OUT } from './motion';
-import { useOverlayOpen } from './overlay';
+import { useModal } from './overlay';
+import { VISIBLE_AREA } from './Sheet';
 
 export interface DialogProps {
   open: boolean;
@@ -15,18 +16,14 @@ export interface DialogProps {
 }
 
 export function Dialog({ open, onClose, title, children, actions }: DialogProps) {
-  useOverlayOpen(open);
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  const panel = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  useModal(open, panel, onClose);
 
   return createPortal(
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="alertdialog" aria-modal="true">
+        <div className="fixed inset-x-0 z-50 flex items-center justify-center p-4" style={VISIBLE_AREA}>
           <motion.div
             className="absolute inset-0 bg-leather-950/80"
             onClick={onClose}
@@ -36,16 +33,24 @@ export function Dialog({ open, onClose, title, children, actions }: DialogProps)
             transition={{ duration: 0.25 }}
           />
           <motion.div
-            className="relative w-full max-w-lg"
+            ref={panel}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            tabIndex={-1}
+            className="relative flex max-h-full w-full max-w-lg outline-none"
             initial={{ opacity: 0, scale: 0.94, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 6, transition: { duration: 0.18 } }}
             transition={{ duration: 0.4, ease: EASE_OUT }}
           >
-            <Panel ornate className="px-7 pt-7 pb-5">
-              <h2 className="font-display text-xl font-semibold tracking-wide text-ink-900">{title}</h2>
-              <div className="mt-3 text-lg text-ink-700">{children}</div>
-              <div className="mt-6 flex flex-wrap justify-end gap-3">{actions}</div>
+            {/* Hauteur limitée à la zone visible : le texte défile, les boutons restent affichés. */}
+            <Panel ornate className="flex max-h-full min-h-0 w-full flex-col px-7 pt-7 pb-5">
+              <h2 id={titleId} className="shrink-0 font-display text-xl font-semibold tracking-wide text-ink-900">
+                {title}
+              </h2>
+              <div className="mt-3 min-h-0 overflow-y-auto text-lg text-ink-700 scrollbar-thin">{children}</div>
+              <div className="mt-6 flex shrink-0 flex-wrap justify-end gap-3">{actions}</div>
             </Panel>
           </motion.div>
         </div>

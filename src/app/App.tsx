@@ -6,6 +6,7 @@ import { bootstrap } from './bootstrap';
 import { useSession } from '@/stores/session';
 import { ExplorationPage } from '@/features/exploration/ExplorationPage';
 import { Panel } from '@/ui/Panel';
+import { useVisualViewportVars } from '@/ui/overlay';
 
 /**
  * Chaque écran secondaire est un fichier séparé, chargé à sa première ouverture :
@@ -53,6 +54,8 @@ function Splash({ error }: { error?: string }) {
 
 export function App() {
   const setCampaignId = useSession((s) => s.setCampaignId);
+  // Zone réellement visible (clavier virtuel compris), pour caler les fenêtres.
+  useVisualViewportVars();
   const [state, setState] = useState<{ ready: boolean; error?: string }>({ ready: false });
 
   useEffect(() => {

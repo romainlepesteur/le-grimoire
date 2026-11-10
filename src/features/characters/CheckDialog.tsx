@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { AnimatePresence, motion } from 'motion/react';
@@ -16,14 +16,15 @@ import {
 import { naturalD20 } from '@/domain/dice';
 import type { RollMode } from '@/domain/schemas';
 import { db } from '@/services/db/database';
-import { recordRoll, spendLuck } from '@/services/db/play';
+import { recordLuckReroll, recordRoll } from '@/services/db/play';
 import { useCheck } from '@/stores/check';
 import { toast } from '@/stores/toasts';
 import { Button, IconButton } from '@/ui/Button';
 import { Segmented } from '@/ui/Segmented';
 import { EASE_OUT } from '@/ui/motion';
 import { cn } from '@/ui/cn';
-import { useOverlayOpen } from '@/ui/overlay';
+import { useModal } from '@/ui/overlay';
+import { VISIBLE_AREA } from '@/ui/Sheet';
 import { useRules } from '@/features/play/hooks';
 
 const DC_PRESETS = [
@@ -58,15 +59,10 @@ export function CheckDialog() {
     setResult(null);
   }, [request]);
 
-  useEffect(() => {
-    if (!request) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [request, close]);
-
   const open = !!request && !!character;
-  useOverlayOpen(open);
+  const panel = useRef<HTMLDivElement>(null);
+  // Échap, focus limité à la fenêtre et rendu à la fermeture, fond inerte.
+  useModal(open, panel, close);
   const parts = character && request ? targetParts(character, rules, request.target) : [];
   const name = request ? targetName(rules, request.target) : '';
   const bonus = partsTotal(parts);
@@ -92,9 +88,8 @@ export function CheckDialog() {
     if (!character || !result || busy) return;
     setBusy(true);
     try {
-      await spendLuck(character.id, rules);
       const r = rerollWithLuck(result, rules);
-      await recordRoll(character.campaignId, r, name, character.id);
+      await recordLuckReroll(character.campaignId, character.id, rules, r, name);
       setResult(r);
     } catch (e) {
       toast({ tone: 'error', title: 'Relance impossible', message: (e as Error).message });
@@ -108,7 +103,7 @@ export function CheckDialog() {
   return createPortal(
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={`Jet : ${name}`}>
+        <div className="fixed inset-x-0 z-50 flex items-center justify-center p-4" style={VISIBLE_AREA}>
           <motion.div
             className="absolute inset-0 bg-leather-950/80"
             onClick={close}
@@ -117,13 +112,20 @@ export function CheckDialog() {
             exit={{ opacity: 0 }}
           />
           <motion.div
-            className="relative w-full max-w-lg overflow-hidden rounded-xl tex-leather frame-gilt shadow-2xl"
+            ref={panel}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Jet : ${name}`}
+            tabIndex={-1}
+            // Hauteur limitée à la zone visible (clavier ouvert compris) : le contenu défile,
+            // le bouton de lancer et les actions restent toujours accessibles.
+            className="relative flex max-h-full w-full max-w-lg flex-col overflow-hidden rounded-xl tex-leather frame-gilt shadow-2xl outline-none"
             initial={{ opacity: 0, scale: 0.94, y: 14 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, transition: { duration: 0.18 } }}
             transition={{ duration: 0.4, ease: EASE_OUT }}
           >
-            <header className="flex items-start gap-3 border-b border-bronze-500/30 px-5 pt-4 pb-3">
+            <header className="flex shrink-0 items-start gap-3 border-b border-bronze-500/30 px-5 pt-4 pb-3">
               <div className="min-w-0 flex-1">
                 <p className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-bronze-400">{character!.name}</p>
                 <h2 className="font-display text-2xl font-semibold text-gold-200 text-engraved">
@@ -140,7 +142,7 @@ export function CheckDialog() {
 
             <AnimatePresence mode="wait" initial={false}>
               {!result ? (
-                <motion.div key="options" className="space-y-4 px-5 py-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <motion.div key="options" className="min-h-0 space-y-4 overflow-y-auto px-5 pt-4 scrollbar-thin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   {singleDie && (
                     <Segmented
                       value={mode}
@@ -196,13 +198,13 @@ export function CheckDialog() {
                       />
                     </div>
                   </div>
-                  <Button variant="primary" size="lg" className="w-full" icon={<Dices className="size-6" />} onClick={() => void roll()} disabled={busy}>
+                  <Button variant="primary" size="lg" className="sticky bottom-0 mb-4 w-full" icon={<Dices className="size-6" />} onClick={() => void roll()} disabled={busy}>
                     Lancer {dieLabel} {formatMod(bonus + circumstance)}
                     {dc != null ? ` contre ${dc}` : ''}
                   </Button>
                 </motion.div>
               ) : (
-                <motion.div key={`r-${result.total}-${result.luckReroll}`} className="px-5 py-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <motion.div key={`r-${result.total}-${result.luckReroll}`} className="min-h-0 overflow-y-auto px-5 pt-5 scrollbar-thin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   <div className="flex flex-col items-center gap-2 text-center">
                     <motion.span
                       initial={{ scale: 0.5, rotate: -10, opacity: 0 }}
@@ -258,7 +260,7 @@ export function CheckDialog() {
                     {nat && <p className={cn('font-display text-sm font-semibold uppercase tracking-[0.2em]', nat === 'critique' ? 'text-gold-300' : 'text-blood-500')}>{nat === 'critique' ? '20 naturel' : '1 naturel'}</p>}
                     {result.luckReroll && <p className="text-sm italic text-parchment-400">Relancé avec un point de chance : le meilleur jet est gardé.</p>}
                   </div>
-                  <div className="mt-5 flex flex-wrap justify-center gap-2">
+                  <div className="sticky bottom-0 -mx-5 mt-5 flex flex-wrap justify-center gap-2 bg-leather-900/95 px-5 py-3">
                     {rules.luck.enabled && !result.luckReroll && (
                       <Button icon={<Clover className="size-5" />} disabled={luckLeft <= 0 || busy} onClick={() => void reroll()} title="Relancer et garder le meilleur des deux jets">
                         Relancer avec la chance ({luckLeft})

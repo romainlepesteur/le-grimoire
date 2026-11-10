@@ -50,7 +50,10 @@ afterEach(() => {
 
 async function startApp() {
   const user = userEvent.setup();
-  render(<App />);
+  // Comme la vraie page : l'application est montée dans #root (rendu inerte sous une fenêtre).
+  document.getElementById('root')?.remove();
+  const root = document.body.appendChild(Object.assign(document.createElement('div'), { id: 'root' }));
+  render(<App />, { container: root });
   // L'Exploration s'affiche sur le lieu courant de la campagne d'exemple.
   await screen.findByRole('button', { name: 'Changer de lieu' }, { timeout: 5000 });
   return user;
@@ -95,12 +98,73 @@ describe('partie (mode Jeu)', () => {
     expect(roll.breakdown[0]).toEqual({ label: 'Sagesse', value: 0 });
   });
 
+  it('« Relancer le dernier » refait un jet de fiche relancé par la chance (régression)', async () => {
+    const user = await startApp();
+    await user.click(screen.getByRole('link', { name: /Fiches/ }));
+    await user.type(await screen.findByRole('textbox', { name: 'Nom du personnage' }, { timeout: 5000 }), 'Aldric{Enter}');
+    await user.click(await screen.findByTitle('Jet de Force'));
+    const dialog = await screen.findByRole('dialog', { name: 'Jet : Force' });
+    await user.click(within(dialog).getByRole('button', { name: /^15/ }));
+    await user.click(within(dialog).getByRole('button', { name: /Lancer 1d20/ }));
+    await user.click(await within(dialog).findByRole('button', { name: /Relancer avec la chance/ }));
+    await waitFor(async () => expect(await db.diceRolls.count()).toBe(2));
+    await user.keyboard('{Escape}');
+
+    await user.keyboard('d');
+    await user.click(await screen.findByRole('button', { name: 'Relancer le dernier' }));
+    await waitFor(async () => expect(await db.diceRolls.count()).toBe(3));
+    const last = (await db.diceRolls.orderBy('createdAt').toArray()).at(-1)!;
+    expect(last).toMatchObject({ label: 'Force', dc: 15, luckReroll: false });
+    expect(last.characterId).toBe((await db.characters.toArray())[0].id);
+    expect(last.formula).toMatch(/^Aldric — Force : 1d20/);
+  });
+
   it('les points de vie se modifient en jeu, d’un toucher', async () => {
     const user = await startApp();
     await user.click(screen.getByRole('link', { name: /Fiches/ }));
     await user.type(await screen.findByRole('textbox', { name: 'Nom du personnage' }, { timeout: 5000 }), 'Aldric{Enter}');
     await user.click(await screen.findByRole('button', { name: 'Perdre 5 points de vie' }));
     await waitFor(async () => expect((await db.characters.toArray())[0].hpCurrent).toBe(5));
+  });
+});
+
+describe('fenêtres (régression)', () => {
+  it('le focus reste dans la fenêtre de jet, le fond est inerte, Échap rend la main', async () => {
+    const user = await startApp();
+    await user.click(screen.getByRole('link', { name: /Fiches/ }));
+    await user.type(await screen.findByRole('textbox', { name: 'Nom du personnage' }, { timeout: 5000 }), 'Aldric{Enter}');
+    await user.click(await screen.findByRole('tab', { name: /Compét/ }));
+    const opener = await screen.findByTitle('Jet de Perception');
+    await user.click(opener);
+    const dialog = await screen.findByRole('dialog', { name: 'Jet : Perception' });
+    await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
+    expect(document.getElementById('root')!.inert).toBe(true);
+    // Une vingtaine de Tab : le focus ne passe jamais derrière la fenêtre.
+    for (let i = 0; i < 20; i++) {
+      await user.tab();
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    }
+    await user.tab({ shift: true });
+    expect(dialog.contains(document.activeElement)).toBe(true);
+
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Jet : Perception' })).toBeNull());
+    expect(document.getElementById('root')!.inert).toBe(false);
+    await waitFor(() => expect(document.activeElement).toBe(opener));
+  });
+
+  it('Échap ne ferme que la fenêtre du dessus', async () => {
+    const user = await startApp();
+    await user.click(screen.getByRole('button', { name: 'Passer en mode Préparation' }));
+    await user.click(await within(await screen.findByRole('alertdialog')).findByRole('button', { name: 'Passer en Préparation' }));
+    await user.click(await screen.findByRole('button', { name: 'Modifier ce lieu' }));
+    const sheet = await screen.findByRole('dialog', { name: /Modifier/ });
+    await user.click(within(sheet).getByRole('button', { name: 'Supprimer' }));
+    await screen.findByRole('alertdialog');
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+    // Le tiroir d'édition, en dessous, est toujours ouvert.
+    expect(screen.getByRole('dialog', { name: /Modifier/ })).toBeTruthy();
   });
 });
 

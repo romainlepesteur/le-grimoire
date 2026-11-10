@@ -12,6 +12,7 @@ import {
   mediaPath,
   type Backup,
 } from './format';
+import { checkIntegrity } from './integrity';
 import { readZip, ZipFormatError, type ZipEntry } from './zip';
 
 export interface ImportPreview {
@@ -20,7 +21,10 @@ export interface ImportPreview {
   existing: Campaign | undefined;
   counts: { locations: number; media: number; ambiances: number; characters: number; items: number; journal: number };
   mediaBytes: number;
-  mediaEntries: Map<string, ZipEntry>;
+  /** Contenu des médias, déjà vérifié (taille et somme de contrôle). */
+  mediaBlobs: Map<string, Blob>;
+  /** Références d'historique remises à vide pendant la vérification (à signaler). */
+  corrections: string[];
 }
 
 function zodDetails(err: ZodError): string[] {
@@ -89,15 +93,25 @@ export async function readBackupFile(file: Blob): Promise<ImportPreview> {
       ids.add(row.id);
     }
   }
-  // Chaque média décrit doit avoir son fichier.
-  const mediaEntries = new Map<string, ZipEntry>();
+  // Références entre éléments (lieux, cartes, médias, fiches, règles).
+  const integrity = checkIntegrity(backup);
+  problems.push(...integrity.errors);
+  const checked = integrity.backup;
+
+  // Chaque média décrit doit avoir son fichier, intact (taille et somme de contrôle vérifiées).
+  const mediaBlobs = new Map<string, Blob>();
   let mediaBytes = 0;
-  for (const meta of backup.tables.mediaMeta) {
+  for (const meta of checked.tables.mediaMeta) {
     const entry = entries.get(mediaPath(meta.id));
-    if (!entry) problems.push(`média « ${meta.name} » : fichier absent de l'archive`);
-    else {
-      mediaEntries.set(meta.id, entry);
+    if (!entry) {
+      problems.push(`média « ${meta.name} » : fichier absent de l'archive`);
+      continue;
+    }
+    try {
+      mediaBlobs.set(meta.id, await entry.blob(meta.mime));
       mediaBytes += entry.size;
+    } catch (e) {
+      problems.push(`média « ${meta.name} » : ${e instanceof ZipFormatError ? e.message : 'illisible'}`);
     }
   }
   if (problems.length) {
@@ -105,7 +119,7 @@ export async function readBackupFile(file: Blob): Promise<ImportPreview> {
   }
 
   return {
-    backup,
+    backup: checked,
     existing: await db.campaigns.get(campaignId),
     counts: {
       locations: backup.tables.locations.length,
@@ -116,7 +130,8 @@ export async function readBackupFile(file: Blob): Promise<ImportPreview> {
       journal: backup.tables.journal.length,
     },
     mediaBytes,
-    mediaEntries,
+    mediaBlobs,
+    corrections: integrity.fixes,
   };
 }
 
@@ -135,12 +150,8 @@ export async function applyBackup(preview: ImportPreview): Promise<string> {
     );
   }
 
-  // Préparer les binaires AVANT la transaction (une transaction IndexedDB ne doit pas attendre d'autres opérations).
-  const blobRows: MediaBlobRow[] = [];
-  for (const meta of backup.tables.mediaMeta) {
-    const entry = preview.mediaEntries.get(meta.id)!;
-    blobRows.push({ id: meta.id, campaignId, blob: await entry.blob(meta.mime) });
-  }
+  // Binaires déjà lus et vérifiés à l'étape 1 (une transaction IndexedDB ne doit attendre aucune autre opération).
+  const blobRows: MediaBlobRow[] = backup.tables.mediaMeta.map((meta) => ({ id: meta.id, campaignId, blob: preview.mediaBlobs.get(meta.id)! }));
 
   const tables = [db.campaigns, db.mediaBlobs, ...CAMPAIGN_TABLES.map((n) => db.table(n))];
   await db.transaction('rw', tables, async () => {

@@ -82,9 +82,11 @@ les anciennes sauvegardes sont relues à l'identique.
 
 ## Tests
 
-- `npm test` : logique pure, services sur IndexedDB simulée (`fake-indexeddb`), compatibilité des
-  sauvegardes, et **tests d'interface de bout en bout** (`src/test/ui`, jsdom + Testing Library) qui
-  pilotent l'application complète comme un joueur.
+- `npm test` : logique pure, services sur IndexedDB simulée (`fake-indexeddb`), compatibilité et
+  intégrité des sauvegardes, écritures simultanées, et **tests d'intégration de l'interface**
+  (`src/test/ui`, jsdom + Testing Library) qui pilotent l'application complète au clavier et à la souris.
+  Ils ne remplacent pas un vrai navigateur : ni rendu visuel, ni service worker, ni moteur audio,
+  ni gestes tactiles.
 - Vérifications manuelles faites à chaque phase : navigateur réel, formats tablette (1280×800,
   1024×600), version de production hors ligne.
 

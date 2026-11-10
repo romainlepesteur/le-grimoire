@@ -38,7 +38,8 @@ export interface MapViewProps {
   onSelectMarker: (id: string | null) => void;
   onPlace: (x: number, y: number) => void;
   onMoveMarker: (id: string, x: number, y: number) => void;
-  onFogChange: (dataUrl: string) => void;
+  /** Masque à enregistrer, avec la carte À LAQUELLE il appartient (pas forcément celle affichée ensuite). */
+  onFogChange: (mapId: string, dataUrl: string) => void;
   onUndoChange: (canUndo: boolean) => void;
   apiRef: Ref<MapViewApi>;
 }
@@ -126,6 +127,7 @@ export function MapView(props: MapViewProps) {
   useEffect(() => {
     const m = lmap.current;
     if (!m || !fogRow) return;
+    const fogMapId = map.id; // la carte de CE brouillard, même si l'écran passe ensuite à une autre
     const f = new Fog(fogRow.width, fogRow.height, map.id.length * 97 + map.width);
     f.opacity = live.current.fogOpacity;
     fog.current = f;
@@ -142,7 +144,7 @@ export function MapView(props: MapViewProps) {
       if (saveTimer.current) {
         window.clearTimeout(saveTimer.current);
         saveTimer.current = undefined;
-        live.current.onFogChange(f.toDataURL());
+        live.current.onFogChange(fogMapId, f.toDataURL());
       }
       layer.remove();
       f.dispose();
@@ -181,7 +183,7 @@ export function MapView(props: MapViewProps) {
       if (!f) return;
       const url = f.toDataURL();
       loadedMask.current = url;
-      live.current.onFogChange(url);
+      live.current.onFogChange(map.id, url);
     }, 700);
   };
 

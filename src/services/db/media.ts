@@ -50,24 +50,28 @@ export interface MediaUsage {
   locations: string[];
   ambiances: string[];
   maps: string[];
+  /** Portraits de fiches. */
+  portraits: string[];
 }
 
 /** Qui utilise chaque média de la campagne (noms des lieux et ambiances). */
 export async function mediaUsage(campaignId: string): Promise<Map<string, MediaUsage>> {
-  const [locations, ambiances, maps] = await Promise.all([
+  const [locations, ambiances, maps, characters] = await Promise.all([
     db.locations.where('campaignId').equals(campaignId).toArray(),
     db.ambiances.where('campaignId').equals(campaignId).toArray(),
     db.maps.where('campaignId').equals(campaignId).toArray(),
+    db.characters.where('campaignId').equals(campaignId).toArray(),
   ]);
   const usage = new Map<string, MediaUsage>();
   const get = (id: string) => {
     let u = usage.get(id);
-    if (!u) usage.set(id, (u = { locations: [], ambiances: [], maps: [] }));
+    if (!u) usage.set(id, (u = { locations: [], ambiances: [], maps: [], portraits: [] }));
     return u;
   };
   for (const l of locations) if (l.imageId) get(l.imageId).locations.push(l.name);
   for (const a of ambiances) for (const layer of a.layers) get(layer.mediaId).ambiances.push(a.name);
   for (const m of maps) if (m.imageId) get(m.imageId).maps.push(m.name);
+  for (const c of characters) if (c.portraitId) get(c.portraitId).portraits.push(c.name);
   return usage;
 }
 
@@ -76,7 +80,7 @@ export async function deleteMediaIfUnused(id: string): Promise<boolean> {
   const meta = await db.mediaMeta.get(id);
   if (!meta) return false;
   const used = (await mediaUsage(meta.campaignId)).get(id);
-  if (used && (used.locations.length || used.ambiances.length || used.maps.length)) return false;
+  if (used && (used.locations.length || used.ambiances.length || used.maps.length || used.portraits.length)) return false;
   await db.transaction('rw', db.mediaMeta, db.mediaBlobs, async () => {
     await db.mediaMeta.delete(id);
     await db.mediaBlobs.delete(id);

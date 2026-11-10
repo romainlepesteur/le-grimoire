@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { CircleCheck, Info, TriangleExclamationPoint, X } from 'lucide-react';
 import { useToasts, type ToastTone } from '@/stores/toasts';
@@ -13,7 +14,9 @@ const ICONS: Record<ToastTone, React.ReactNode> = {
 
 export function Toaster() {
   const { toasts, dismiss } = useToasts();
-  return (
+  // Hors de #root : les notifications (et leur bouton « Annuler ») restent utilisables
+  // quand une fenêtre rend le reste de l'application inerte.
+  return createPortal(
     <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[60] flex flex-col items-center gap-2 px-4" aria-live="polite">
       <AnimatePresence initial={false}>
         {toasts.map((t) => (
@@ -53,6 +56,7 @@ export function Toaster() {
           </motion.div>
         ))}
       </AnimatePresence>
-    </div>
+    </div>,
+    document.body,
   );
 }

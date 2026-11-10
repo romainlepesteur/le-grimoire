@@ -9,6 +9,8 @@ import { useActiveCampaign, useSettings } from '@/hooks/data';
 import { useWakeLock } from '@/hooks/device';
 import { updateSettings } from '@/services/db/settings';
 import { useSession } from '@/stores/session';
+import { toast } from '@/stores/toasts';
+import { useCheck } from '@/stores/check';
 import { Toaster } from '@/ui/Toaster';
 import { ErrorBoundary } from '@/ui/ErrorBoundary';
 import { Button } from '@/ui/Button';
@@ -31,6 +33,8 @@ function useGlobalShortcuts() {
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
       const s = useSession.getState();
+      // Pas de raccourci pendant une confirmation ou un jet de fiche : ils restent au premier plan.
+      if (useCheck.getState().request || document.querySelector('[role="alertdialog"]')) return;
       if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
         s.setDiceOpen(false);
@@ -46,6 +50,22 @@ function useGlobalShortcuts() {
   }, []);
 }
 
+/**
+ * Filet de sécurité : une écriture qui échoue (stockage plein, base fermée…) sans être gérée
+ * localement affiche quand même un message, au lieu d'échouer en silence.
+ */
+function useWriteErrorReporting() {
+  useEffect(() => {
+    const onRejection = (e: PromiseRejectionEvent) => {
+      const err = e.reason;
+      if (!(err instanceof Error) || err.name === 'AbortError') return;
+      toast({ tone: 'error', title: 'Une modification n’a pas pu être enregistrée', message: err.message });
+    };
+    window.addEventListener('unhandledrejection', onRejection);
+    return () => window.removeEventListener('unhandledrejection', onRejection);
+  }, []);
+}
+
 const BACKUP_REMINDER_MS = 3 * 24 * 60 * 60 * 1000;
 
 export function AppShell() {
@@ -58,6 +78,7 @@ export function AppShell() {
   useWakeLock(settings.wakeLock);
   useAmbianceDirector();
   useGlobalShortcuts();
+  useWriteErrorReporting();
 
   // Rappel d'export : modifications non sauvegardées depuis plus de 3 jours.
   const lastExport = settings.lastExportAt;

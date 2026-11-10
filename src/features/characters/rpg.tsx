@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Clover, Minus, Plus, Star } from 'lucide-react';
 import { abilityMod, formatMod, luckCurrent, luckMax, partsTotal, RANK_LABELS, scoreOf, skillParts } from '@/domain/checks';
 import type { Character, Rules } from '@/domain/schemas';
-import { patchCharacter, recoverLuck } from '@/services/db/play';
+import { adjustAbility, cycleSkillRank, patchSkill, recoverLuck, toggleSkillFavorite } from '@/services/db/play';
 import { useCheck } from '@/stores/check';
 import { toast } from '@/stores/toasts';
 import { Button } from '@/ui/Button';
@@ -16,7 +16,8 @@ import { cn } from '@/ui/cn';
  */
 export function AbilityMedallions({ character, rules, editing, light, compact }: { character: Character; rules: Rules; editing: boolean; light?: boolean; compact?: boolean }) {
   const open = useCheck((s) => s.open);
-  const setScore = (id: string, v: number) => void patchCharacter(character.id, { abilities: { ...character.abilities, [id]: Math.max(1, Math.min(30, v)) } });
+  // Variation calculée sur la dernière valeur enregistrée : des touchers rapides se cumulent.
+  const step = (id: string, delta: number) => void adjustAbility(character.id, id, delta).catch((e: Error) => toast({ tone: 'error', title: 'Modification impossible', message: e.message }));
   return (
     <div className={cn('grid gap-2', compact ? 'grid-cols-4 sm:grid-cols-7' : 'grid-cols-4 sm:grid-cols-7')}>
       {rules.abilities.map((a, i) => {
@@ -47,10 +48,10 @@ export function AbilityMedallions({ character, rules, editing, light, compact }:
             </button>
             {editing && (
               <div className="flex items-center">
-                <button type="button" aria-label={`${a.name} moins un`} onClick={() => setScore(a.id, score - 1)} className={cn('flex size-9 items-center justify-center rounded-full', light ? 'text-ink-700 hover:bg-ink-900/5' : 'text-parchment-200 hover:bg-parchment-100/10')}>
+                <button type="button" aria-label={`${a.name} moins un`} onClick={() => step(a.id, -1)} className={cn('flex size-11 items-center justify-center rounded-full', light ? 'text-ink-700 hover:bg-ink-900/5' : 'text-parchment-200 hover:bg-parchment-100/10')}>
                   <Minus className="size-4" />
                 </button>
-                <button type="button" aria-label={`${a.name} plus un`} onClick={() => setScore(a.id, score + 1)} className={cn('flex size-9 items-center justify-center rounded-full', light ? 'text-ink-700 hover:bg-ink-900/5' : 'text-parchment-200 hover:bg-parchment-100/10')}>
+                <button type="button" aria-label={`${a.name} plus un`} onClick={() => step(a.id, 1)} className={cn('flex size-11 items-center justify-center rounded-full', light ? 'text-ink-700 hover:bg-ink-900/5' : 'text-parchment-200 hover:bg-parchment-100/10')}>
                   <Plus className="size-4" />
                 </button>
               </div>
@@ -83,16 +84,18 @@ export function SkillList({ character, rules, editing, light, onlyRelevant }: { 
   const open = useCheck((s) => s.open);
   const [showAll, setShowAll] = useState(false);
   const entry = (id: string) => character.skills[id] ?? { rank: 0, bonus: 0, favorite: false };
-  const patch = (id: string, p: Partial<{ rank: number; bonus: number; favorite: boolean }>) =>
-    void patchCharacter(character.id, { skills: { ...character.skills, [id]: { ...entry(id), ...p } } });
+  const fail = (e: Error) => toast({ tone: 'error', title: 'Modification impossible', message: e.message });
+  const patch = (id: string, p: Partial<{ rank: number; bonus: number; favorite: boolean }>) => void patchSkill(character.id, id, p).catch(fail);
 
   const all = [...rules.skills].sort((a, b) => Number(entry(b.id).favorite) - Number(entry(a.id).favorite) || a.name.localeCompare(b.name, 'fr'));
   const relevant = all.filter((s) => entry(s.id).rank > 0 || entry(s.id).bonus !== 0 || entry(s.id).favorite);
   const list = onlyRelevant && !showAll && !editing ? relevant : all;
 
   return (
-    <div>
-      <ul className={cn('grid gap-1', !onlyRelevant && 'sm:grid-cols-2')}>
+    // Colonnes selon la largeur réelle de la fiche (pas de l'écran) : un nom de compétence
+    // n'est jamais tronqué, même quand la fiche partage l'écran avec les compagnons.
+    <div className="@container">
+      <ul className={cn('grid gap-1', !onlyRelevant && '@xl:grid-cols-2')}>
         {list.map((s) => {
           const e = entry(s.id);
           const total = partsTotal(skillParts(character, rules, s.id));
@@ -102,13 +105,13 @@ export function SkillList({ character, rules, editing, light, onlyRelevant }: { 
               <button
                 type="button"
                 aria-label={e.favorite ? `Retirer ${s.name} des favorites` : `Mettre ${s.name} en favorite`}
-                onClick={() => patch(s.id, { favorite: !e.favorite })}
+                onClick={() => void toggleSkillFavorite(character.id, s.id).catch(fail)}
                 className="flex size-11 shrink-0 items-center justify-center"
               >
                 <Star className={cn('size-4', e.favorite ? (light ? 'fill-bronze-600 text-bronze-600' : 'fill-gold-300 text-gold-300') : light ? 'text-ink-500/50' : 'text-parchment-400/50')} />
               </button>
               {editing ? (
-                <button type="button" onClick={() => patch(s.id, { rank: (e.rank + 1) % 3 })} className="flex h-11 items-center px-1" title="Changer le rang">
+                <button type="button" onClick={() => void cycleSkillRank(character.id, s.id).catch(fail)} className="flex h-11 items-center px-1" title="Changer le rang">
                   <RankPips rank={e.rank} light={light} />
                 </button>
               ) : (

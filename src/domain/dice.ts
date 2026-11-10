@@ -106,3 +106,24 @@ export function naturalD20(result: Pick<RollResult, 'groups'>): 'critique' | 'ec
   if (kept.length !== 1) return null;
   return kept[0] === 20 ? 'critique' : kept[0] === 1 ? 'echec' : null;
 }
+
+/**
+ * Lancer à refaire à l'identique (« Relancer le dernier ») à partir des données enregistrées,
+ * jamais en relisant la formule affichée (qui peut contenir un nom de personnage).
+ * Une relance par la chance contient les dés des deux jets : on n'en refait qu'un.
+ */
+export function replaySpec(roll: {
+  groups: DiceGroup[];
+  modifier: number;
+  mode: RollMode;
+  luckReroll?: boolean;
+}): { spec: DiceSpec; mode: RollMode } {
+  if (!roll.groups.length) throw new DiceFormulaError('Ce lancer ne contient aucun dé.');
+  const groups = roll.groups.map((g) => {
+    const perRoll = roll.luckReroll ? g.values.length / 2 : g.values.length;
+    const count = roll.mode !== 'normal' ? perRoll / 2 : perRoll;
+    if (!Number.isInteger(count) || count < 1) throw new DiceFormulaError('Ce lancer ancien ne peut pas être relancé.');
+    return { count, sides: g.sides };
+  });
+  return { spec: { groups, modifier: roll.modifier }, mode: roll.mode };
+}

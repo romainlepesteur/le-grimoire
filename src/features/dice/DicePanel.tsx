@@ -6,6 +6,7 @@ import {
   formatFormula,
   naturalD20,
   parseFormula,
+  replaySpec,
   rollDice,
   supportsAdvantage,
   type DiceSpec,
@@ -101,6 +102,42 @@ export function DicePanel() {
       await recordRoll(campaign.id, rollDice(spec, rollMode), label);
     } catch (e) {
       toast({ tone: 'error', title: 'Lancer impossible', message: (e as Error).message });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /**
+   * Refait le dernier lancer à l'identique depuis ses données enregistrées (dés, modificateur,
+   * avantage). Pour un jet de fiche, le détail du calcul et la difficulté sont conservés.
+   */
+  const replayLast = async () => {
+    if (!campaign || !last || busy) return;
+    setBusy(true);
+    try {
+      const { spec, mode } = replaySpec(last);
+      const r = rollDice(spec, mode);
+      if (last.characterId || last.breakdown.length) {
+        const prefix = last.formula.includes(' : ') ? `${last.formula.split(' : ')[0]} : ` : '';
+        const dc = last.dc;
+        await recordRoll(
+          campaign.id,
+          {
+            ...r,
+            formula: prefix + r.formula,
+            breakdown: last.breakdown,
+            dc,
+            outcome: dc == null ? null : r.total >= dc ? 'reussite' : 'echec',
+            luckReroll: false,
+          },
+          last.label,
+          last.characterId,
+        );
+      } else {
+        await recordRoll(campaign.id, r, last.label);
+      }
+    } catch (e) {
+      toast({ tone: 'warning', title: 'Ce lancer ne peut pas être relancé', message: (e as Error).message });
     } finally {
       setBusy(false);
     }
@@ -256,13 +293,7 @@ export function DicePanel() {
           {last && (
             <IconButton
               label="Relancer le dernier"
-              onClick={() => {
-                try {
-                  void roll(parseFormula(last.formula.replace(/ avec .*$/, '')), last.mode);
-                } catch {
-                  /* formule ancienne illisible : on ignore */
-                }
-              }}
+              onClick={() => void replayLast()}
             >
               <RotateCcw className="size-5" />
             </IconButton>

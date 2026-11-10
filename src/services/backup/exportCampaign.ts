@@ -7,13 +7,17 @@ import {
   mediaPath,
   type Backup,
 } from './format';
+import { describeError, readBackupFile } from './importCampaign';
 import { writeZip, type ZipInputEntry } from './zip';
 
 export interface ExportResult {
   blob: Blob;
   filename: string;
   mediaCount: number;
+  /** Médias décrits mais dont le fichier manque sur l'appareil : retirés de l'archive. */
   missingMedia: string[];
+  /** Vrai si des médias manquants ont été retirés : archive restaurable mais incomplète. */
+  partial: boolean;
 }
 
 const README = `LE GRIMOIRE — SAUVEGARDE DE CAMPAGNE
@@ -67,21 +71,40 @@ export async function exportCampaign(campaignId: string): Promise<ExportResult> 
     tables,
   };
 
+  // Un média dont le fichier a disparu de l'appareil ne peut pas être sauvegardé. Plutôt que de
+  // produire une archive impossible à restaurer, on le retire avec ses références : l'export est
+  // alors PARTIEL, mais restaurable, et clairement signalé comme tel.
+  const missingIds = new Set(tables.mediaMeta.filter((m) => !blobById.has(m.id)).map((m) => m.id));
+  const missingMedia = tables.mediaMeta.filter((m) => missingIds.has(m.id)).map((m) => m.name || m.id);
+  if (missingIds.size) {
+    const drop = (id: string | null) => (id && missingIds.has(id) ? null : id);
+    tables.mediaMeta = tables.mediaMeta.filter((m) => !missingIds.has(m.id));
+    tables.locations = tables.locations.map((l) => ({ ...l, imageId: drop(l.imageId) }));
+    tables.maps = tables.maps.map((m) => ({ ...m, imageId: drop(m.imageId) }));
+    tables.characters = tables.characters.map((c) => ({ ...c, portraitId: drop(c.portraitId) }));
+    tables.ambiances = tables.ambiances.map((a) => ({ ...a, layers: a.layers.filter((l) => !missingIds.has(l.mediaId)) }));
+  }
+
   const entries: ZipInputEntry[] = [
     { name: BACKUP_DATA_FILE, data: new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }) },
     { name: 'LISEZMOI.txt', data: new Blob([README], { type: 'text/plain' }) },
   ];
-  const missingMedia: string[] = [];
-  for (const meta of tables.mediaMeta) {
-    const blob = blobById.get(meta.id);
-    if (blob) entries.push({ name: mediaPath(meta.id), data: blob });
-    else missingMedia.push(meta.name || meta.id);
+  for (const meta of tables.mediaMeta) entries.push({ name: mediaPath(meta.id), data: blobById.get(meta.id)! });
+  const zip = await writeZip(entries);
+
+  // Garantie : l'archive est relue et vérifiée comme à l'import, avant d'être proposée.
+  try {
+    await readBackupFile(zip);
+  } catch (e) {
+    const { message, details } = describeError(e);
+    throw new BackupError(`L’archive produite ne passe pas la vérification : ${message}`, details);
   }
 
   return {
-    blob: await writeZip(entries),
-    filename: `grimoire-${slug(campaign.name)}-${stamp(now)}.zip`,
-    mediaCount: tables.mediaMeta.length - missingMedia.length,
+    blob: zip,
+    filename: `grimoire-${slug(campaign.name)}-${stamp(now)}${missingIds.size ? '-partielle' : ''}.zip`,
+    mediaCount: tables.mediaMeta.length,
     missingMedia,
+    partial: missingIds.size > 0,
   };
 }
