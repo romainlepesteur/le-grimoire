@@ -386,9 +386,24 @@ export function LocationEditor({
               </Select>
             </Field>
 
-            <div className="flex items-start gap-3 rounded-lg border border-dashed border-bronze-500/30 px-3 py-2.5 text-sm text-parchment-400">
-              <MapIcon className="mt-0.5 size-5 shrink-0" />
-              <span>Le placement de ce lieu sur la carte arrive en phase 3, depuis l’écran Carte.</span>
+            <div className="flex items-center gap-3 rounded-lg border border-dashed border-bronze-500/30 px-3 py-2.5">
+              <MapIcon className="size-5 shrink-0 text-bronze-400" />
+              {isNew ? (
+                <span className="text-sm text-parchment-400">Une fois le lieu créé, vous pourrez le placer sur la carte.</span>
+              ) : (
+                <>
+                  <span className="flex-1 text-sm text-parchment-400">Position sur la carte affichée</span>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      onClose();
+                      navigate('/carte', { state: { placeLocationId: target!.id } });
+                    }}
+                  >
+                    Placer sur la carte
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </motion.div>

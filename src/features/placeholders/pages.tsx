@@ -1,22 +1,5 @@
-import { Backpack, Map, ScrollText, Users } from 'lucide-react';
+import { Backpack, ScrollText, Users } from 'lucide-react';
 import { ComingSoon } from './ComingSoon';
-
-export function MapPage() {
-  return (
-    <ComingSoon
-      phase={3}
-      icon={<Map className="size-7" strokeWidth={1.5} />}
-      title="Carte du monde"
-      features={[
-        'Carte fictive zoomable et déplaçable au doigt',
-        'Brouillard qui masque réellement les zones inconnues',
-        'Pinceau de révélation (mode Préparation), plusieurs tailles',
-        'Distinction zones explorées / lieux identifiés',
-        'Marqueurs (dont rumeurs approximatives) reliés aux lieux',
-      ]}
-    />
-  );
-}
 
 export function CharactersPage() {
   return (

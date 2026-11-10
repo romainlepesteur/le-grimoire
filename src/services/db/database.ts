@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { Ambiance, Campaign, GenericRow, Location, MediaMeta } from '@/domain/schemas';
+import type { Ambiance, Campaign, FogMask, GameMap, GenericRow, Location, MapMarker, MediaMeta } from '@/domain/schemas';
 
 export interface MediaBlobRow {
   id: string;
@@ -40,9 +40,9 @@ export class GrimoireDB extends Dexie {
   mediaMeta!: EntityTable<MediaMeta, 'id'>;
   mediaBlobs!: EntityTable<MediaBlobRow, 'id'>;
   ambiances!: EntityTable<Ambiance, 'id'>;
-  maps!: EntityTable<GenericRow, 'id'>;
-  markers!: EntityTable<GenericRow, 'id'>;
-  fogMasks!: EntityTable<GenericRow, 'id'>;
+  maps!: EntityTable<GameMap, 'id'>;
+  markers!: EntityTable<MapMarker, 'id'>;
+  fogMasks!: EntityTable<FogMask, 'id'>;
   characters!: EntityTable<GenericRow, 'id'>;
   items!: EntityTable<GenericRow, 'id'>;
   journal!: EntityTable<GenericRow, 'id'>;

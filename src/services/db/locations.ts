@@ -92,13 +92,15 @@ export async function saveLocation(campaignId: string, id: string | null, draft:
  */
 export async function deleteLocation(campaignId: string, id: string): Promise<{ deleted: number }> {
   const images: string[] = [];
-  const deleted = await db.transaction('rw', db.locations, db.campaigns, async () => {
+  const deleted = await db.transaction('rw', db.locations, db.campaigns, db.markers, async () => {
     const all = await listLocations(campaignId);
     const target = all.find((l) => l.id === id);
     if (!target) return 0;
     const ids = [id, ...descendantIds(id, all)];
     for (const l of all) if (ids.includes(l.id) && l.imageId) images.push(l.imageId);
     await db.locations.bulkDelete(ids);
+    // Leurs marqueurs disparaissent de toutes les cartes.
+    await db.markers.where('campaignId').equals(campaignId).filter((m) => !!m.locationId && ids.includes(m.locationId)).delete();
     const campaign = await db.campaigns.get(campaignId);
     const patch: { updatedAt: number; currentLocationId?: string | null } = { updatedAt: Date.now() };
     if (campaign?.currentLocationId && ids.includes(campaign.currentLocationId)) patch.currentLocationId = target.parentId;

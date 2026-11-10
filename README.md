@@ -13,7 +13,7 @@ carte avec brouillard de découverte, fiches, dés, inventaire et journal.
 |---|---|---|
 | 1 — Fondations | Projet, design system, navigation, stockage local, PWA, modes Jeu/Préparation, export/import | ✅ terminée |
 | 2 — Immersion | Création/édition des lieux, import d’illustrations, moteur audio multicouche, ambiances | ✅ terminée |
-| 3 — Carte | Carte interactive, marqueurs, brouillard, révélation au pinceau | à faire |
+| 3 — Carte | Carte interactive, marqueurs, brouillard, révélation au pinceau | ✅ terminée |
 | 4 — Outils JDR | Dés, fiches, compagnons, inventaire, journal | à faire |
 | 5 — Finalisation | Tests de bout en bout, optimisation, documentation complète | à faire |
 
@@ -69,6 +69,18 @@ toute écriture, puis remplace la campagne en une seule opération (tout ou rien
 
 ⚠️ Le stockage du navigateur n’est pas une sauvegarde : désinstaller l’application ou effacer
 les données de Chrome supprime la campagne. Exportez régulièrement et gardez le fichier ailleurs.
+
+## Carte
+
+Écran **Carte** : une ou plusieurs cartes importées (monde, région, plan de ville), zoomables au doigt.
+
+- **Brouillard** (exploration géographique) : il recouvre toute la carte ; en mode Préparation, le
+  pinceau **Révéler** le dissipe au fil de l'exploration, **Recouvrir** le remet, avec annulation.
+- **Marqueurs** (découverte des lieux), indépendants du brouillard : un lieu peut être **caché**
+  (invisible pour le joueur), connu par **rumeur** (une zone approximative, volontairement décentrée)
+  ou **connu** (position exacte). Se rendre dans un lieu le rend connu automatiquement.
+- **Voir comme le joueur** : aperçu exact du mode Jeu depuis la Préparation.
+- En mode Jeu, la carte se consulte seulement ; toucher un lieu permet de s'y rendre.
 
 ## Contenus
 

@@ -72,6 +72,19 @@ Gabarit : *[type de lieu] + [ce qu'on voit au premier plan] + [arrière-plan] + 
 météo] + [un détail qui le rend unique]*. Ce dernier détail permet de distinguer deux auberges ou deux
 forêts.
 
+### La carte
+
+La carte suit la même exigence de réalisme : une **vue aérienne peinte**, pas un parchemin dessiné.
+
+> Carte vue du ciel, à la verticale, d'une région de high fantasy grounded, peinte de façon réaliste
+> comme une maquette de relief éclairée par le soleil rasant : collines herbeuses, forêts denses,
+> rivière sinueuse, routes de terre, une ville marchande fortifiée au centre, quelques villages.
+> Couleurs naturelles et sourdes, ombres douces des reliefs, légère brume dans les vallées.
+> Format paysage 3:2. Sans texte, sans légende, sans rose des vents, sans cadre, sans parchemin.
+
+Laissez les noms de côté : l'application affiche les lieux par-dessus, et le brouillard cache ce que
+le personnage ne connaît pas encore. Une carte de 3000 à 4000 px de large garde du détail au zoom.
+
 ## 3. Préparer les fichiers
 
 | Réglage | Recommandation |

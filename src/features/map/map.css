@@ -1,0 +1,151 @@
+/* Carte : fond, marqueurs et brouillard. Chargé seulement avec l'écran Carte. */
+
+.leaflet-container.gm-map {
+  background: #0f0a07;
+  font-family: var(--font-serif);
+  outline: none;
+}
+
+.gm-map .gm-fog {
+  pointer-events: none;
+}
+
+.gm-map.gm-brush,
+.gm-map.gm-brush .leaflet-interactive {
+  cursor: none;
+}
+.gm-map.gm-place {
+  cursor: crosshair;
+}
+
+/* Épingle */
+.gm-marker {
+  background: none;
+  border: none;
+}
+.gm-pin {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, -14px);
+  width: max-content;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.gm-pin:hover {
+  transform: translate(-50%, -16px) scale(1.06);
+}
+.gm-pin-dot {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 35% 30%, var(--color-gold-200), var(--color-bronze-500) 60%, var(--color-bronze-700));
+  border: 2px solid #1a110b;
+  box-shadow:
+    0 2px 6px rgb(0 0 0 / 0.6),
+    0 0 0 1px rgb(227 194 122 / 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gm-pin-dot::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #1a110b;
+}
+.gm-pin-label {
+  margin-top: 4px;
+  max-width: 220px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-parchment-50);
+  background: rgb(20 13 8 / 0.72);
+  text-shadow: 0 1px 2px #000;
+}
+
+/* Lieu où se trouve le personnage : anneau qui pulse doucement. */
+.gm-current .gm-pin-dot::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 999px;
+  border: 2px solid var(--color-gold-300);
+  animation: gm-pulse 2.4s ease-out infinite;
+}
+.gm-current .gm-pin-label {
+  color: var(--color-gold-200);
+}
+@keyframes gm-pulse {
+  0% { opacity: 0.9; transform: scale(0.8); }
+  100% { opacity: 0; transform: scale(1.6); }
+}
+
+.gm-selected .gm-pin-dot {
+  box-shadow:
+    0 0 0 3px var(--color-gold-300),
+    0 0 18px 4px rgb(227 194 122 / 0.6);
+}
+
+/* Visible seulement en Préparation (caché au joueur). */
+.gm-hidden {
+  opacity: 0.55;
+}
+.gm-hidden .gm-pin-dot {
+  background: #3b2d20;
+  border-style: dashed;
+  border-color: var(--color-parchment-300);
+}
+.gm-hidden .gm-pin-label {
+  font-style: italic;
+}
+
+/* Point d'intérêt libre (sans lieu relié) : épingle plus discrète. */
+.gm-free .gm-pin-dot {
+  width: 22px;
+  height: 22px;
+  background: radial-gradient(circle at 35% 30%, #e8dcc2, #8f7a5a);
+}
+
+/* Rumeur vue par le joueur : un simple libellé au centre de la zone. */
+.gm-rumor {
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  font-style: italic;
+  letter-spacing: 0.05em;
+  color: var(--color-gold-200);
+  white-space: nowrap;
+  text-shadow: 0 1px 3px #000, 0 0 8px #000;
+  width: max-content;
+}
+
+/* Le pinceau suit le doigt ou la souris. */
+.gm-brush-cursor {
+  position: absolute;
+  z-index: 650;
+  pointer-events: none;
+  border-radius: 999px;
+  border: 2px solid rgb(227 194 122 / 0.9);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.6), inset 0 0 12px rgb(227 194 122 / 0.25);
+  transform: translate(-50%, -50%);
+}
+.gm-brush-cursor.gm-cover {
+  border-color: rgb(196 120 90 / 0.95);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gm-current .gm-pin-dot::before {
+    animation: none;
+  }
+}

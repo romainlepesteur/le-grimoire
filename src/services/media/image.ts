@@ -4,6 +4,9 @@
  */
 
 export const IMAGE_MAX_EDGE = 2560;
+/** Les cartes gardent plus de détail : on y zoome. */
+export const MAP_MAX_EDGE = 4096;
+export const MAP_TARGET_BYTES = 3.5 * 1024 * 1024;
 const TARGET_BYTES = 1.2 * 1024 * 1024;
 const ACCEPTED = /^image\/(jpeg|png|webp|gif|avif|bmp)$/;
 
@@ -28,7 +31,10 @@ function canvasToBlob(canvas: HTMLCanvasElement | OffscreenCanvas, type: string,
   return new Promise((resolve) => (canvas as HTMLCanvasElement).toBlob(resolve, type, quality));
 }
 
-export async function prepareImage(file: File): Promise<PreparedImage> {
+export async function prepareImage(
+  file: File,
+  { maxEdge = IMAGE_MAX_EDGE, targetBytes = TARGET_BYTES }: { maxEdge?: number; targetBytes?: number } = {},
+): Promise<PreparedImage> {
   if (!ACCEPTED.test(file.type)) {
     throw new ImageImportError('Format non pris en charge. Utilisez une image WebP, JPEG ou PNG.');
   }
@@ -39,10 +45,10 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
     throw new ImageImportError('Cette image est illisible ou endommagée.');
   }
   try {
-    const { width, height } = fitWithin(bitmap.width, bitmap.height);
+    const { width, height } = fitWithin(bitmap.width, bitmap.height, maxEdge);
     const needsResize = width !== bitmap.width || height !== bitmap.height;
     // Une image déjà légère et à la bonne taille est gardée telle quelle (aucune perte).
-    if (!needsResize && file.size <= TARGET_BYTES && /webp|jpeg/.test(file.type)) {
+    if (!needsResize && file.size <= targetBytes && /webp|jpeg/.test(file.type)) {
       return { blob: file, width, height, originalSize: file.size, converted: false };
     }
 
@@ -60,7 +66,7 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
       blob = await canvasToBlob(canvas, 'image/webp', quality);
       // Certains navigateurs ignorent WebP et renvoient du PNG : on passe alors au JPEG.
       if (!blob || blob.type !== 'image/webp') blob = await canvasToBlob(canvas, 'image/jpeg', quality);
-      if (blob && blob.size <= TARGET_BYTES) break;
+      if (blob && blob.size <= targetBytes) break;
     }
     if (!blob) throw new ImageImportError('La conversion de l’image a échoué.');
     // Si la conversion n'apporte rien, on garde l'original.

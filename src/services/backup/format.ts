@@ -2,8 +2,11 @@ import { z } from 'zod';
 import {
   ambianceSchema,
   campaignSchema,
+  fogMaskSchema,
   genericRowSchema,
   locationSchema,
+  mapSchema,
+  markerSchema,
   mediaMetaSchema,
 } from '@/domain/schemas';
 
@@ -29,9 +32,9 @@ export const backupSchema = z.object({
     locations: z.array(locationSchema).default([]),
     mediaMeta: z.array(mediaMetaSchema).default([]),
     ambiances: z.array(ambianceSchema).default([]),
-    maps: z.array(genericRowSchema).default([]),
-    markers: z.array(genericRowSchema).default([]),
-    fogMasks: z.array(genericRowSchema).default([]),
+    maps: z.array(mapSchema).default([]),
+    markers: z.array(markerSchema).default([]),
+    fogMasks: z.array(fogMaskSchema).default([]),
     characters: z.array(genericRowSchema).default([]),
     items: z.array(genericRowSchema).default([]),
     journal: z.array(genericRowSchema).default([]),

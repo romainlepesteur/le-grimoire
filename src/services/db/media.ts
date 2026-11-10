@@ -49,6 +49,7 @@ export async function renameMedia(id: string, name: string): Promise<void> {
 export interface MediaUsage {
   locations: string[];
   ambiances: string[];
+  maps: string[];
 }
 
 /** Qui utilise chaque média de la campagne (noms des lieux et ambiances). */
@@ -61,13 +62,12 @@ export async function mediaUsage(campaignId: string): Promise<Map<string, MediaU
   const usage = new Map<string, MediaUsage>();
   const get = (id: string) => {
     let u = usage.get(id);
-    if (!u) usage.set(id, (u = { locations: [], ambiances: [] }));
+    if (!u) usage.set(id, (u = { locations: [], ambiances: [], maps: [] }));
     return u;
   };
   for (const l of locations) if (l.imageId) get(l.imageId).locations.push(l.name);
   for (const a of ambiances) for (const layer of a.layers) get(layer.mediaId).ambiances.push(a.name);
-  // Cartes (phase 3) : leur image de fond compte comme une utilisation.
-  for (const m of maps) if (typeof m.imageId === 'string') get(m.imageId).locations.push(String(m.name ?? 'Carte'));
+  for (const m of maps) if (m.imageId) get(m.imageId).maps.push(m.name);
   return usage;
 }
 
@@ -76,7 +76,7 @@ export async function deleteMediaIfUnused(id: string): Promise<boolean> {
   const meta = await db.mediaMeta.get(id);
   if (!meta) return false;
   const used = (await mediaUsage(meta.campaignId)).get(id);
-  if (used && (used.locations.length || used.ambiances.length)) return false;
+  if (used && (used.locations.length || used.ambiances.length || used.maps.length)) return false;
   await db.transaction('rw', db.mediaMeta, db.mediaBlobs, async () => {
     await db.mediaMeta.delete(id);
     await db.mediaBlobs.delete(id);

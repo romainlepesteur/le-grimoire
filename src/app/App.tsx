@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { HashRouter, Route, Routes } from 'react-router';
 import { MotionConfig } from 'motion/react';
 import { AppShell } from './AppShell';
@@ -7,8 +7,11 @@ import { useSession } from '@/stores/session';
 import { ExplorationPage } from '@/features/exploration/ExplorationPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { AmbiancesPage } from '@/features/audio/AmbiancesPage';
-import { CharactersPage, InventoryPage, JournalPage, MapPage } from '@/features/placeholders/pages';
+import { CharactersPage, InventoryPage, JournalPage } from '@/features/placeholders/pages';
 import { Panel } from '@/ui/Panel';
+
+// La carte (Leaflet) n'est chargée qu'à la première ouverture de l'écran Carte.
+const MapPage = lazy(() => import('@/features/map/MapPage'));
 
 function Splash({ error }: { error?: string }) {
   return (
@@ -54,7 +57,14 @@ export function App() {
       <Routes>
         <Route element={<AppShell />}>
           <Route index element={<ExplorationPage />} />
-          <Route path="carte" element={<MapPage />} />
+          <Route
+            path="carte"
+            element={
+              <Suspense fallback={null}>
+                <MapPage />
+              </Suspense>
+            }
+          />
           <Route path="personnages" element={<CharactersPage />} />
           <Route path="inventaire" element={<InventoryPage />} />
           <Route path="journal" element={<JournalPage />} />

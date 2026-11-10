@@ -15,13 +15,21 @@ export async function renameCampaign(id: string, name: string): Promise<void> {
   await db.campaigns.update(id, { name: clean, updatedAt: Date.now() });
 }
 
-/** Se rendre dans un lieu : il devient le lieu courant et passe en tête des « récents ». */
+/**
+ * Se rendre dans un lieu : il devient le lieu courant et passe en tête des « récents ».
+ * Y être allé, c'est le connaître : ses marqueurs (cachés ou simples rumeurs) deviennent exacts.
+ */
 export async function travelTo(campaignId: string, locationId: string): Promise<void> {
   const now = Date.now();
-  await db.transaction('rw', db.campaigns, db.locations, async () => {
+  await db.transaction('rw', db.campaigns, db.locations, db.markers, async () => {
     const loc = await db.locations.get(locationId);
     if (!loc || loc.campaignId !== campaignId) throw new Error('Lieu introuvable dans cette campagne.');
     await db.locations.update(locationId, { lastVisitedAt: now });
     await db.campaigns.update(campaignId, { currentLocationId: locationId, updatedAt: now });
+    await db.markers
+      .where('campaignId')
+      .equals(campaignId)
+      .filter((m) => m.locationId === locationId && m.status !== 'connu')
+      .modify({ status: 'connu', updatedAt: now });
   });
 }

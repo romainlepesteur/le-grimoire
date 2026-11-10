@@ -21,6 +21,8 @@ export const campaignSchema = z.object({
   isDemo: z.boolean().default(false),
   /** Lieu affiché sur l'écran Exploration. */
   currentLocationId: id.nullable().default(null),
+  /** Carte affichée sur l'écran Carte. */
+  currentMapId: id.nullable().default(null),
   createdAt: timestamp,
   updatedAt: timestamp,
 });
@@ -153,7 +155,72 @@ export const ambianceSchema = z.object({
 export type Ambiance = z.infer<typeof ambianceSchema>;
 
 // ---------------------------------------------------------------------------
-// Tables des phases suivantes (carte, fiches, inventaire, journal, dés).
+// Cartes : une image, des marqueurs, un masque de brouillard.
+// Coordonnées en pixels de l'image d'origine (x vers la droite, y vers le bas).
+// ---------------------------------------------------------------------------
+
+export const mapSchema = z.object({
+  id,
+  campaignId: id,
+  name: z.string().trim().min(1).max(200),
+  imageId: id.nullable().default(null),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+  sortOrder: z.number().default(0),
+  isDemo: z.boolean().default(false),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type GameMap = z.infer<typeof mapSchema>;
+
+/**
+ * Ce que le joueur sait d'un lieu sur la carte :
+ * - cache : invisible en mode Jeu (préparé à l'avance) ;
+ * - rumeur : position approximative (une zone « quelque part par ici ») ;
+ * - connu : position exacte.
+ * C'est indépendant du brouillard : on peut connaître un lieu sans avoir exploré la région.
+ */
+export const MARKER_STATUSES = ['cache', 'rumeur', 'connu'] as const;
+export type MarkerStatus = (typeof MARKER_STATUSES)[number];
+export const MARKER_STATUS_LABELS: Record<MarkerStatus, string> = {
+  cache: 'Caché au joueur',
+  rumeur: 'Rumeur (position approximative)',
+  connu: 'Connu (position exacte)',
+};
+
+export const markerSchema = z.object({
+  id,
+  campaignId: id,
+  mapId: id,
+  /** Lieu relié ; null pour un simple point d'intérêt. */
+  locationId: id.nullable().default(null),
+  label: z.string().max(200).default(''),
+  note: z.string().max(2000).default(''),
+  x: z.number().finite(),
+  y: z.number().finite(),
+  status: z.enum(MARKER_STATUSES).default('connu'),
+  /** Rayon de la zone d'incertitude d'une rumeur (pixels de la carte). */
+  radius: z.number().positive().max(100000).default(150),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type MapMarker = z.infer<typeof markerSchema>;
+
+export const fogMaskSchema = z.object({
+  id,
+  campaignId: id,
+  mapId: id,
+  enabled: z.boolean().default(true),
+  /** Image PNG (data URL) : opaque là où la carte est révélée. Vide = tout est dans le brouillard. */
+  mask: z.string().max(20_000_000).default(''),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+  updatedAt: timestamp,
+});
+export type FogMask = z.infer<typeof fogMaskSchema>;
+
+// ---------------------------------------------------------------------------
+// Tables des phases suivantes (fiches, inventaire, journal, dés).
 // Leur structure détaillée sera fixée dans leur phase ; la sauvegarde
 // les transporte déjà, avec une validation minimale.
 // ---------------------------------------------------------------------------
