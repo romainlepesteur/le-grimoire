@@ -7,6 +7,9 @@ carte avec brouillard de découverte, fiches, dés, inventaire et journal.
 - **Aucun serveur, aucun abonnement, aucune IA** : l’application ne raconte rien, elle accompagne le MJ.
 - **Pensée pour tablette Android en paysage**, utilisable sur ordinateur.
 
+**Application en ligne : https://romainlepesteur.github.io/le-grimoire/** (à ouvrir dans Chrome sur la tablette,
+puis ⋮ → Installer l’application).
+
 ## État d’avancement
 
 | Phase | Contenu | État |
