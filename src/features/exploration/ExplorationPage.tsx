@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
-import { Dices, Eye, Map, Minimize, Music, ScrollText, Star, Users } from 'lucide-react';
-import { LOCATION_KIND_LABELS, type Location } from '@/domain/schemas';
+import { Dices, Eye, Map, Minimize, Pencil, Plus, ScrollText, Star, Users } from 'lucide-react';
+import { LOCATION_KIND_LABELS, MAX_LOCATION_DEPTH, type Location } from '@/domain/schemas';
 import { useActiveCampaign, useCurrentPlace } from '@/hooks/data';
 import { toggleFavorite } from '@/services/db/locations';
-import { useSession } from '@/stores/session';
+import { useIsPrep, useSession } from '@/stores/session';
+import { AmbiancePanel } from '@/features/audio/AmbiancePanel';
+import { LocationEditor, type LocationEditorTarget } from '@/features/locations/LocationEditor';
 import { Badge } from '@/ui/Badge';
 import { Button, IconButton } from '@/ui/Button';
-import { Divider, Panel, SectionTitle } from '@/ui/Panel';
+import { Divider, Panel } from '@/ui/Panel';
 import { EASE_OUT } from '@/ui/motion';
 import { cn } from '@/ui/cn';
 import { LocationIllustration } from './LocationIllustration';
@@ -87,7 +89,13 @@ export function ExplorationPage() {
   const { location, path, loading } = useCurrentPlace();
   const { immersive, setImmersive, setDiceOpen } = useSession();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [editor, setEditor] = useState<LocationEditorTarget | null>(null);
+  const isPrep = useIsPrep();
   const navigate = useNavigate();
+  const openFromPicker = (t: LocationEditorTarget) => {
+    setPickerOpen(false);
+    setEditor(t);
+  };
 
   useEffect(() => () => setImmersive(false), [setImmersive]);
 
@@ -99,12 +107,28 @@ export function ExplorationPage() {
         <Panel ornate className="max-w-lg px-8 py-8 text-center">
           <h1 className="font-display text-2xl text-ink-900">Aucun lieu sélectionné</h1>
           <p className="mt-2 text-lg text-ink-700">Choisissez où se trouve votre personnage.</p>
-          <Button variant="primary" className="mt-5" onClick={() => setPickerOpen(true)}>
-            Choisir un lieu
-          </Button>
+          <div className="mt-5 flex justify-center gap-3">
+            <Button variant="primary" onClick={() => setPickerOpen(true)}>
+              Choisir un lieu
+            </Button>
+            {isPrep && (
+              <Button variant="ink" icon={<Plus className="size-5" />} onClick={() => setEditor({ id: null, parentId: null })}>
+                Créer un lieu
+              </Button>
+            )}
+          </div>
         </Panel>
         {campaign && (
-          <LocationPicker open={pickerOpen} onClose={() => setPickerOpen(false)} campaignId={campaign.id} currentPath={[]} />
+          <>
+            <LocationPicker
+              open={pickerOpen}
+              onClose={() => setPickerOpen(false)}
+              campaignId={campaign.id}
+              currentPath={[]}
+              onEdit={isPrep ? openFromPicker : undefined}
+            />
+            <LocationEditor campaignId={campaign.id} target={isPrep ? editor : null} onClose={() => setEditor(null)} />
+          </>
         )}
       </div>
     );
@@ -164,6 +188,11 @@ export function ExplorationPage() {
                   <h2 className="mt-2 font-display text-xl font-semibold leading-snug text-ink-900">{location.name}</h2>
                   {ancestors.length > 0 && <p className="text-base text-ink-500">{ancestors.map((a) => a.name).join(' › ')}</p>}
                 </div>
+                {isPrep && (
+                  <IconButton tone="light" label="Modifier ce lieu" onClick={() => setEditor({ id: location.id })}>
+                    <Pencil className="size-5" />
+                  </IconButton>
+                )}
                 <IconButton
                   tone="light"
                   label={location.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
@@ -194,22 +223,33 @@ export function ExplorationPage() {
             </motion.div>
           </AnimatePresence>
 
-          <Button
-            variant="primary"
-            size="lg"
-            className="mt-4 w-full [@media(max-height:680px)]:mt-3 [@media(max-height:680px)]:h-12"
-            onClick={() => setPickerOpen(true)}
-          >
-            Changer de lieu
-          </Button>
+          <div className="mt-4 flex gap-2 [@media(max-height:680px)]:mt-3">
+            <Button
+              variant="primary"
+              size="lg"
+              className="flex-1 [@media(max-height:680px)]:h-12"
+              onClick={() => setPickerOpen(true)}
+            >
+              Changer de lieu
+            </Button>
+            {isPrep && (
+              <Button
+                variant="ink"
+                size="lg"
+                className="px-4 [@media(max-height:680px)]:h-12"
+                title={path.length >= MAX_LOCATION_DEPTH ? 'Ajouter un lieu voisin' : 'Ajouter un lieu à l’intérieur'}
+                aria-label="Ajouter un lieu"
+                onClick={() =>
+                  setEditor({ id: null, parentId: path.length >= MAX_LOCATION_DEPTH ? location.parentId : location.id })
+                }
+              >
+                <Plus className="size-6" />
+              </Button>
+            )}
+          </div>
         </Panel>
 
-        <Panel tone="leather" className="px-5 py-4 [@media(max-height:680px)]:py-2.5">
-          <SectionTitle className="text-bronze-400">Ambiance</SectionTitle>
-          <p className="mt-1.5 flex items-center gap-2 text-base italic text-parchment-400">
-            <Music className="size-4 shrink-0" /> Lecteur audio prévu en phase 2
-          </p>
-        </Panel>
+        <AmbiancePanel />
 
         <div className="grid grid-cols-4 gap-2">
           {shortcuts.map(({ label, icon: Icon, run }, i) => (
@@ -229,7 +269,14 @@ export function ExplorationPage() {
         </div>
       </motion.aside>
 
-      <LocationPicker open={pickerOpen} onClose={() => setPickerOpen(false)} campaignId={campaign.id} currentPath={path} />
+      <LocationPicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        campaignId={campaign.id}
+        currentPath={path}
+        onEdit={isPrep ? openFromPicker : undefined}
+      />
+      <LocationEditor campaignId={campaign.id} target={isPrep ? editor : null} onClose={() => setEditor(null)} />
 
       <AnimatePresence>
         {immersive && <ImmersiveView location={location} ancestors={ancestors} onExit={() => setImmersive(false)} />}

@@ -14,6 +14,8 @@ import { Button } from '@/ui/Button';
 import { ConfirmDialog, Dialog } from '@/ui/Dialog';
 import { Sheet } from '@/ui/Sheet';
 import { ComingSoon } from '@/features/placeholders/ComingSoon';
+import { MixerSheet } from '@/features/audio/MixerSheet';
+import { useAmbianceDirector } from '@/features/audio/useAmbianceDirector';
 
 const BACKUP_REMINDER_MS = 3 * 24 * 60 * 60 * 1000;
 
@@ -25,6 +27,7 @@ export function AppShell() {
   const campaign = useActiveCampaign();
   const [confirmPrep, setConfirmPrep] = useState(false);
   useWakeLock(settings.wakeLock);
+  useAmbianceDirector();
 
   // Rappel d'export : modifications non sauvegardées depuis plus de 3 jours.
   const lastExport = settings.lastExportAt;
@@ -88,6 +91,8 @@ export function AppShell() {
           ]}
         />
       </Sheet>
+
+      <MixerSheet />
 
       <ConfirmDialog
         open={confirmPrep}

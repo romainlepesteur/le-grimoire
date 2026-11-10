@@ -1,12 +1,13 @@
 import { NavLink } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
-import { Backpack, Compass, Feather, Lock, Map, ScrollText, Settings, Users } from 'lucide-react';
+import { Backpack, Compass, Feather, Lock, Map, Music, ScrollText, Settings, Users } from 'lucide-react';
 import { useSession } from '@/stores/session';
 import { cn } from '@/ui/cn';
 
 const ITEMS = [
   { to: '/', label: 'Exploration', icon: Compass, end: true },
   { to: '/carte', label: 'Carte', icon: Map },
+  { to: '/ambiances', label: 'Ambiances', icon: Music },
   { to: '/personnages', label: 'Fiches', icon: Users },
   { to: '/inventaire', label: 'Inventaire', icon: Backpack },
   { to: '/journal', label: 'Journal', icon: ScrollText },
@@ -33,7 +34,7 @@ function RailLink({
       end={end}
       className={({ isActive }) =>
         cn(
-          'group relative flex h-[68px] w-full flex-col items-center justify-center gap-1 rounded-lg transition-colors duration-300',
+          'group relative flex h-[64px] w-full shrink-0 [@media(max-height:700px)]:h-[54px] flex-col items-center justify-center gap-1 rounded-lg transition-colors duration-300',
           isActive ? 'text-gold-200' : 'text-parchment-300 hover:bg-parchment-100/5 hover:text-parchment-100',
         )
       }
@@ -79,8 +80,8 @@ export function NavRail({ backupDue, onRequestMode }: { backupDue: boolean; onRe
       className="flex w-[92px] shrink-0 flex-col items-center gap-1 border-r border-bronze-500/25 px-2 pb-3 tex-wood"
       style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))', paddingLeft: 'max(0.5rem, env(safe-area-inset-left))' }}
     >
-      <div className="mb-2 flex flex-col items-center" aria-hidden>
-        <img src="./icons/favicon.svg" alt="" className="size-11 animate-compass-in drop-shadow" />
+      <div className="mb-2 flex flex-col items-center [@media(max-height:700px)]:mb-0" aria-hidden>
+        <img src="./icons/favicon.svg" alt="" className="size-11 animate-compass-in drop-shadow [@media(max-height:700px)]:size-9" />
       </div>
       {ITEMS.map((it) => (
         <RailLink key={it.to} {...it} />
@@ -93,7 +94,7 @@ export function NavRail({ backupDue, onRequestMode }: { backupDue: boolean; onRe
         aria-pressed={prep}
         title={prep ? 'Revenir au mode Jeu' : 'Passer en mode Préparation'}
         className={cn(
-          'mt-1 flex h-[72px] w-full flex-col items-center justify-center gap-1 overflow-hidden rounded-lg border transition-colors duration-500 active:scale-95',
+          'mt-1 flex h-[72px] w-full shrink-0 [@media(max-height:700px)]:h-[60px] flex-col items-center justify-center gap-1 overflow-hidden rounded-lg border transition-colors duration-500 active:scale-95',
           prep
             ? 'border-ember-500/70 bg-ember-500/15 text-gold-200'
             : 'border-bronze-500/30 text-parchment-300 hover:border-bronze-400/60 hover:text-parchment-100',

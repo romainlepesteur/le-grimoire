@@ -12,7 +12,7 @@ carte avec brouillard de découverte, fiches, dés, inventaire et journal.
 | Phase | Contenu | État |
 |---|---|---|
 | 1 — Fondations | Projet, design system, navigation, stockage local, PWA, modes Jeu/Préparation, export/import | ✅ terminée |
-| 2 — Immersion | Création/édition des lieux, import d’illustrations, moteur audio multicouche, ambiances | à faire |
+| 2 — Immersion | Création/édition des lieux, import d’illustrations, moteur audio multicouche, ambiances | ✅ terminée |
 | 3 — Carte | Carte interactive, marqueurs, brouillard, révélation au pinceau | à faire |
 | 4 — Outils JDR | Dés, fiches, compagnons, inventaire, journal | à faire |
 | 5 — Finalisation | Tests de bout en bout, optimisation, documentation complète | à faire |
@@ -75,7 +75,20 @@ les données de Chrome supprime la campagne. Exportez régulièrement et gardez 
 Aucune illustration n’est fournie : tant qu’un lieu n’a pas d’image, un cadre sobre « Aucune
 illustration » s’affiche. Le guide [docs/illustrations.md](docs/illustrations.md) donne une charte
 visuelle commune et des prompts prêts à l’emploi pour générer des images réalistes et cohérentes.
-Aucune musique n’est fournie : vous importerez vos propres fichiers (phase 2).
+Les illustrations s’importent en mode Préparation (panneau du lieu → **Modifier**) ; elles sont
+redimensionnées (2560 px au plus) et converties en WebP sur l’appareil.
+
+Aucune musique n’est fournie : importez vos fichiers dans **Ambiances → Sons** (mode Préparation).
+Une ambiance mélange plusieurs couches jouées ensemble :
+
+- **en boucle** : musique (lue en flux) ou fond sonore (pluie, feu, foule — décodé pour boucler sans coupure) ;
+- **ponctuelle** : un son court rejoué au hasard (« toutes les 20 à 60 s »), avec une légère variation.
+
+Chaque lieu peut avoir son ambiance ; ses sous-lieux en héritent. Changer de lieu fait un fondu
+enchaîné, et une boucle commune à deux ambiances continue sans coupure. Pendant la partie, la barre
+inférieure permet de régler les volumes (général, musique, bruitages) et de choisir une autre
+ambiance (combat, tension…) jusqu’au prochain changement de lieu. Les navigateurs exigent un toucher
+avant de jouer du son : bouton **Activer l’ambiance sonore**.
 
 Les animations (fondus, tiroirs, poussières en suspension) se coupent automatiquement si l’appareil
 est réglé sur « réduire les animations » ; les effets d’ambiance sont désactivables dans Réglages.

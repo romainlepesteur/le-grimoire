@@ -6,6 +6,7 @@ import { bootstrap } from './bootstrap';
 import { useSession } from '@/stores/session';
 import { ExplorationPage } from '@/features/exploration/ExplorationPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
+import { AmbiancesPage } from '@/features/audio/AmbiancesPage';
 import { CharactersPage, InventoryPage, JournalPage, MapPage } from '@/features/placeholders/pages';
 import { Panel } from '@/ui/Panel';
 
@@ -57,6 +58,7 @@ export function App() {
           <Route path="personnages" element={<CharactersPage />} />
           <Route path="inventaire" element={<InventoryPage />} />
           <Route path="journal" element={<JournalPage />} />
+          <Route path="ambiances" element={<AmbiancesPage />} />
           <Route path="reglages" element={<SettingsPage />} />
           <Route path="*" element={<ExplorationPage />} />
         </Route>

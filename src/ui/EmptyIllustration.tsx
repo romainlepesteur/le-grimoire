@@ -56,7 +56,7 @@ export function EmptyIllustration({
               Aucune illustration
             </p>
             <p className="text-base leading-snug text-parchment-300/80">
-              L’import d’images depuis l’interface arrive en phase 2 (mode Préparation).
+              En mode Préparation, touchez « Modifier » sur le panneau du lieu pour importer une image.
             </p>
           </div>
         </div>

@@ -87,8 +87,10 @@ fonctionne hors ligne) ; qualité 75–82.
 
 ## 4. Importer dans l'application
 
-Arrive en **phase 2** : mode Préparation → lieu → *Changer l'illustration*. L'image est stockée sur
-l'appareil et incluse dans les sauvegardes exportées.
+Mode Préparation → écran Exploration → bouton crayon **Modifier ce lieu** → *Importer une illustration*.
+L'application redimensionne l'image (2560 px au plus) et la convertit en WebP si besoin : une image
+de 18 Mo devient environ 700 Ko. Elle est stockée sur l'appareil et incluse dans les sauvegardes
+exportées.
 
 > Les droits : vérifiez que vous avez le droit d'utiliser chaque image (images générées pour votre
 > usage personnel, photos libres de droits, vos propres créations). N'importez pas d'illustrations

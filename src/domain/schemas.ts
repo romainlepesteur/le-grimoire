@@ -55,6 +55,23 @@ export const PLACEHOLDER_THEMES = [
 ] as const;
 export type PlaceholderTheme = (typeof PLACEHOLDER_THEMES)[number];
 
+export const THEME_LABELS: Record<PlaceholderTheme, string> = {
+  region: 'Région, paysage',
+  ville: 'Ville',
+  auberge: 'Auberge, intérieur chaleureux',
+  marche: 'Marché, place',
+  foret: 'Forêt',
+  collines: 'Collines, plaine',
+  montagne: 'Montagne',
+  cote: 'Côte, mer, lac',
+  ruines: 'Ruines',
+  donjon: 'Donjon, souterrain',
+  autre: 'Autre',
+};
+
+/** Profondeur maximale de la hiérarchie : Région › Zone › Lieu. */
+export const MAX_LOCATION_DEPTH = 3;
+
 export const locationSchema = z.object({
   id,
   campaignId: id,
@@ -96,18 +113,30 @@ export const mediaMetaSchema = z.object({
 export type MediaMeta = z.infer<typeof mediaMetaSchema>;
 
 // ---------------------------------------------------------------------------
-// Ambiances sonores (utilisées en phase 2) : plusieurs couches simultanées.
+// Ambiances sonores : plusieurs couches simultanées (musique, fond sonore,
+// sons ponctuels joués au hasard).
 // ---------------------------------------------------------------------------
 
 export const AUDIO_BUSES = ['music', 'sfx'] as const;
 export type AudioBus = (typeof AUDIO_BUSES)[number];
+
+export const AUDIO_BUS_LABELS: Record<AudioBus, string> = {
+  music: 'Musique',
+  sfx: 'Bruitages',
+};
+
+export const AMBIANCE_CATEGORIES = ['Exploration', 'Ville', 'Intérieur', 'Nature', 'Tension', 'Combat', 'Repos', 'Autre'];
 
 export const ambianceLayerSchema = z.object({
   id,
   mediaId: id,
   bus: z.enum(AUDIO_BUSES),
   volume: z.number().min(0).max(1).default(0.8),
+  /** true : boucle continue. false : son ponctuel rejoué au hasard (corbeau, cloche…). */
   loop: z.boolean().default(true),
+  /** Intervalle (secondes) entre deux déclenchements d'un son ponctuel. */
+  intervalMin: z.number().min(1).max(3600).default(20),
+  intervalMax: z.number().min(1).max(3600).default(60),
 });
 export type AmbianceLayer = z.infer<typeof ambianceLayerSchema>;
 

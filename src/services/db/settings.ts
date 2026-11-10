@@ -11,11 +11,20 @@ export interface AppSettings {
   storageNoticeSeen: boolean;
   /** Effets d'ambiance sur les illustrations (poussières, lent mouvement de caméra). */
   ambientEffects: boolean;
+  /** Volumes audio (0 à 1) : général, musique, bruitages. */
+  volumeMaster: number;
+  volumeMusic: number;
+  volumeSfx: number;
+  muted: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   activeCampaignId: null,
   ambientEffects: true,
+  volumeMaster: 0.8,
+  volumeMusic: 0.7,
+  volumeSfx: 0.9,
+  muted: false,
   wakeLock: true,
   lastExportAt: null,
   storageNoticeSeen: false,

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { ChevronRight, Clock, MapPin, Navigation, Star } from 'lucide-react';
+import { ChevronRight, Clock, MapPin, Navigation, Pencil, Plus, Star } from 'lucide-react';
+import type { LocationEditorTarget } from '@/features/locations/LocationEditor';
+import { Button } from '@/ui/Button';
 import { EASE_OUT } from '@/ui/motion';
 import type { Location } from '@/domain/schemas';
 import { LOCATION_KIND_LABELS } from '@/domain/schemas';
@@ -23,13 +25,15 @@ interface Props {
   onClose: () => void;
   campaignId: string;
   currentPath: Location[];
+  /** Mode Préparation : création et modification depuis le sélecteur. */
+  onEdit?: (target: LocationEditorTarget) => void;
 }
 
 /**
  * Sélecteur de lieu en trois colonnes (Région › Zone › Lieu) : on choisit
  * n'importe quel lieu en deux ou trois touchers, sans changer d'écran.
  */
-export function LocationPicker({ open, onClose, campaignId, currentPath }: Props) {
+export function LocationPicker({ open, onClose, campaignId, currentPath, onEdit }: Props) {
   const all = useCampaignLocations(campaignId) ?? [];
   const [tab, setTab] = useState<Tab>('parcourir');
   const [col1, setCol1] = useState<string | null>(null);
@@ -130,6 +134,17 @@ export function LocationPicker({ open, onClose, campaignId, currentPath }: Props
             <Navigation className="size-5" />
           </button>
         )}
+        {onEdit && (
+          <button
+            type="button"
+            onClick={() => onEdit({ id: l.id })}
+            aria-label={`Modifier : ${l.name}`}
+            title="Modifier"
+            className="flex w-12 shrink-0 items-center justify-center rounded-lg border border-ember-500/30 text-parchment-300 transition-colors hover:border-ember-500/70 hover:text-gold-200"
+          >
+            <Pencil className="size-4" />
+          </button>
+        )}
       </motion.li>
     );
   };
@@ -162,6 +177,26 @@ export function LocationPicker({ open, onClose, campaignId, currentPath }: Props
       title="Changer de lieu"
       subtitle="Touchez une région ou une ville pour l’ouvrir, puis un lieu pour vous y rendre. Le bouton ➤ permet de s’arrêter dans une région ou une ville."
       sizeClass="w-[min(1040px,96vw)]"
+      footer={
+        onEdit && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="mr-1 font-display text-xs font-semibold uppercase tracking-[0.16em] text-ember-500">Préparation</span>
+            <Button size="sm" icon={<Plus className="size-4" />} onClick={() => onEdit({ id: null, parentId: null })}>
+              Nouvelle région
+            </Button>
+            {col1 && byId.get(col1) && (
+              <Button size="sm" icon={<Plus className="size-4" />} onClick={() => onEdit({ id: null, parentId: col1 })}>
+                Zone dans {byId.get(col1)!.name}
+              </Button>
+            )}
+            {col2 && byId.get(col2) && (
+              <Button size="sm" icon={<Plus className="size-4" />} onClick={() => onEdit({ id: null, parentId: col2 })}>
+                Lieu dans {byId.get(col2)!.name}
+              </Button>
+            )}
+          </div>
+        )
+      }
     >
       <div className="flex h-full flex-col gap-4 px-5 py-4">
         <Segmented

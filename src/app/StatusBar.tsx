@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
-import { Dices, Expand, MapPin, Music, Shrink, WifiOff } from 'lucide-react';
+import { Dices, Expand, MapPin, Shrink, WifiOff } from 'lucide-react';
+import { AudioControl } from '@/features/audio/AudioControl';
 import { useCurrentPlace } from '@/hooks/data';
 import { useFullscreen, useOnline } from '@/hooks/device';
 import { useSession } from '@/stores/session';
@@ -34,9 +35,8 @@ export function StatusBar() {
         </AnimatePresence>
       </Link>
 
-      <div className="flex min-w-0 flex-1 items-center justify-center gap-2 text-parchment-400">
-        <Music className="size-5 shrink-0" />
-        <span className="truncate text-base italic">Ambiance sonore — disponible en phase 2</span>
+      <div className="flex min-w-0 flex-1 items-center justify-center">
+        <AudioControl />
       </div>
 
       {!online && (
