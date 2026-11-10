@@ -62,16 +62,20 @@ function useDelete() {
 /** Fiche du personnage joueur, sur parchemin. */
 type SheetTab = 'carac' | 'competences' | 'traits' | 'bourse';
 
-/** Onglets de la fiche : moins de défilement sur tablette. */
+/**
+ * Onglets de la fiche : moins de défilement sur tablette.
+ * Libellés complets quand la fiche est large, courts sinon (requête de conteneur :
+ * c'est la largeur de la fiche qui compte, pas celle de l'écran).
+ */
 function SheetTabs({ value, onChange, light, compact }: { value: SheetTab; onChange: (t: SheetTab) => void; light?: boolean; compact?: boolean }) {
-  const tabs: { v: SheetTab; label: string }[] = [
-    { v: 'carac', label: compact ? 'Carac.' : 'Caractéristiques' },
-    { v: 'competences', label: 'Compétences' },
-    { v: 'traits', label: 'Traits' },
-    { v: 'bourse', label: compact ? 'Notes' : 'Bourse, notes' },
+  const tabs: { v: SheetTab; label: string; short: string }[] = [
+    { v: 'carac', label: 'Caractéristiques', short: 'Carac.' },
+    { v: 'competences', label: 'Compétences', short: 'Compét.' },
+    { v: 'traits', label: 'Traits', short: 'Traits' },
+    { v: 'bourse', label: compact ? 'Notes' : 'Bourse, notes', short: compact ? 'Notes' : 'Bourse' },
   ];
   return (
-    <div role="tablist" className={cn('mt-4 flex gap-1 border-b', light ? 'border-ink-700/20' : 'border-bronze-500/25')}>
+    <div role="tablist" className={cn('@container mt-4 flex gap-1 border-b', light ? 'border-ink-700/20' : 'border-bronze-500/25')}>
       {tabs.map((t) => (
         <button
           key={t.v}
@@ -84,7 +88,8 @@ function SheetTabs({ value, onChange, light, compact }: { value: SheetTab; onCha
             value === t.v ? (light ? 'text-ink-900' : 'text-gold-200') : light ? 'text-ink-500 hover:text-ink-700' : 'text-parchment-400 hover:text-parchment-200',
           )}
         >
-          {t.label}
+          <span className="@2xl:hidden">{t.short}</span>
+          <span className="hidden @2xl:inline">{t.label}</span>
           {value === t.v && (
             <motion.span
               layoutId={`sheet-tab-${light ? 'l' : 'd'}`}

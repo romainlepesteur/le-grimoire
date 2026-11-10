@@ -218,12 +218,15 @@ export function JournalPage() {
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-parchment-400" />
             <TextInput value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Chercher" className="h-11 pl-9 text-base" aria-label="Chercher dans le journal" />
           </label>
-          <IconButton label="Exporter en Markdown (lisible)" onClick={() => exportAs('md')} disabled={!entries.length}>
-            <Download className="size-5" />
-          </IconButton>
-          <Button variant="ghost" size="sm" onClick={() => exportAs('json')} disabled={!entries.length}>
-            JSON
-          </Button>
+          {/* Les deux exports restent groupés, même quand la ligne passe à la ligne. */}
+          <div className="flex shrink-0 items-center">
+            <IconButton label="Exporter en Markdown (lisible)" onClick={() => exportAs('md')} disabled={!entries.length}>
+              <Download className="size-5" />
+            </IconButton>
+            <Button variant="ghost" size="sm" onClick={() => exportAs('json')} disabled={!entries.length}>
+              JSON
+            </Button>
+          </div>
         </div>
         {activeQuests > 0 && filter === 'tous' && (
           <p className="px-1 text-base text-parchment-300">

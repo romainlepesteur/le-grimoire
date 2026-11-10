@@ -118,9 +118,9 @@ export function DicePanel() {
   const nat = last ? naturalD20(last) : null;
 
   return (
-    <div className="flex h-full flex-col gap-4 px-5 py-4">
+    <div className="flex h-full flex-col gap-4 px-5 py-4 [@media(max-height:680px)]:gap-2.5 [@media(max-height:680px)]:py-3">
       {/* Dernier résultat */}
-      <div className="relative flex min-h-[150px] flex-col items-center justify-center overflow-hidden rounded-xl border border-bronze-500/30 bg-leather-950/50 px-4 py-4">
+      <div className="relative flex min-h-[150px] flex-col items-center justify-center overflow-hidden rounded-xl border border-bronze-500/30 bg-leather-950/50 px-4 py-4 [@media(max-height:680px)]:min-h-[104px] [@media(max-height:680px)]:py-2">
         <AnimatePresence mode="popLayout" initial={false}>
           {last ? (
             <motion.div
@@ -134,7 +134,7 @@ export function DicePanel() {
               {last.label && <span className="font-display text-sm uppercase tracking-[0.18em] text-bronze-400">{last.label}</span>}
               <span
                 className={cn(
-                  'font-display text-6xl font-semibold leading-none tabular-nums text-engraved',
+                  'font-display text-6xl font-semibold leading-none tabular-nums text-engraved [@media(max-height:680px)]:text-5xl',
                   nat === 'critique' ? 'text-gold-200' : nat === 'echec' ? 'text-blood-500' : 'text-parchment-50',
                 )}
               >
@@ -162,7 +162,7 @@ export function DicePanel() {
             type="button"
             onClick={() => setPool((p) => ({ ...p, [s]: Math.min(20, (p[s] ?? 0) + 1) }))}
             className={cn(
-              'relative flex h-16 flex-col items-center justify-center rounded-lg border transition-[color,background-color,border-color,transform] duration-150 active:scale-90',
+              'relative flex h-16 flex-col items-center justify-center rounded-lg border [@media(max-height:680px)]:h-13 transition-[color,background-color,border-color,transform] duration-150 active:scale-90',
               pool[s] ? 'border-gold-300/60 bg-gold-300/12 text-gold-200' : 'border-bronze-500/35 text-parchment-200 hover:border-bronze-400',
             )}
             aria-label={`Ajouter un d${s}`}
