@@ -1,0 +1,10 @@
+node_modules/
+dist/
+dev-dist/
+coverage/
+*.log
+.DS_Store
+Thumbs.db
+# Sauvegardes de campagne exportées (données personnelles)
+*.grimoire.zip
+grimoire-*.zip

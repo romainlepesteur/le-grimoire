@@ -1,0 +1,175 @@
+@import 'tailwindcss';
+
+/* ==========================================================================
+   LE GRIMOIRE — Design system
+   Cuir sombre pour le cadre (repos des yeux pendant de longues sessions),
+   parchemin pour les contenus, bronze et or sobres pour les accents.
+   ========================================================================== */
+
+@theme {
+  --color-leather-950: #140d08;
+  --color-leather-900: #1c130d;
+  --color-leather-850: #241810;
+  --color-leather-800: #2e1f15;
+  --color-leather-700: #3f2b1d;
+  --color-leather-600: #57402c;
+
+  --color-parchment-50: #faf4e6;
+  --color-parchment-100: #f2e7cf;
+  --color-parchment-200: #e6d6b2;
+  --color-parchment-300: #d3bd8f;
+  --color-parchment-400: #b9a070;
+
+  --color-ink-900: #2a1d12;
+  --color-ink-700: #4a3826;
+  --color-ink-500: #6f5a42;
+
+  --color-forest-900: #142219;
+  --color-forest-800: #1d3124;
+  --color-forest-700: #2a4633;
+  --color-forest-500: #4d7358;
+
+  --color-bronze-700: #6e4d26;
+  --color-bronze-600: #8a6230;
+  --color-bronze-500: #a97c3d;
+  --color-bronze-400: #c49a5a;
+  --color-gold-300: #e3c27a;
+  --color-gold-200: #f0d9a3;
+
+  --color-ember-500: #c2622d;
+  --color-blood-600: #8b2e24;
+  --color-blood-500: #a5392c;
+
+  --font-display: 'Cinzel', 'Times New Roman', serif;
+  --font-serif: 'EB Garamond', Georgia, 'Times New Roman', serif;
+
+  --animate-fade-in: fade-in 0.35s ease-out both;
+  --animate-sheet-right: sheet-right 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-sheet-bottom: sheet-bottom 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-pop-in: pop-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-slow-zoom: slow-zoom 40s ease-in-out infinite alternate;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes sheet-right {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+  @keyframes sheet-bottom {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: scale(0.96) translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes slow-zoom {
+    from { transform: scale(1); }
+    to { transform: scale(1.06); }
+  }
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior: none;
+  }
+  body {
+    margin: 0;
+    background-color: var(--color-leather-950);
+    color: var(--color-parchment-100);
+    font-family: var(--font-serif);
+    font-size: 18px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  input,
+  textarea,
+  [contenteditable] {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+  button {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-gold-300);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--color-gold-300) 45%, transparent);
+  }
+}
+
+/* --- Textures (SVG générés, aucun fichier externe) ------------------------- */
+
+@utility tex-leather {
+  background-color: var(--color-leather-900);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1.2 .9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 120% 90% at 30% 20%, rgb(120 80 50 / 0.18), transparent 60%),
+    radial-gradient(ellipse 100% 80% at 80% 100%, rgb(0 0 0 / 0.45), transparent 70%);
+}
+
+@utility tex-parchment {
+  background-color: var(--color-parchment-100);
+  color: var(--color-ink-900);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .24 0 0 0 0 .12 0 0 0 -1.4 1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='.2'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 50% 40%, transparent 55%, rgb(150 110 60 / 0.28) 100%),
+    radial-gradient(circle at 12% 88%, rgb(160 120 70 / 0.16), transparent 30%);
+}
+
+@utility tex-wood {
+  background-color: var(--color-leather-800);
+  background-image:
+    repeating-linear-gradient(
+      92deg,
+      rgb(255 220 170 / 0.025) 0 2px,
+      transparent 2px 9px,
+      rgb(0 0 0 / 0.06) 9px 11px,
+      transparent 11px 23px
+    ),
+    linear-gradient(180deg, rgb(255 210 150 / 0.05), rgb(0 0 0 / 0.25));
+}
+
+/* Double filet de bronze, comme l'encadrement d'une page enluminée. */
+@utility frame-gilt {
+  border: 1px solid color-mix(in srgb, var(--color-bronze-400) 70%, transparent);
+  box-shadow:
+    inset 0 0 0 3px color-mix(in srgb, var(--color-leather-950) 35%, transparent),
+    inset 0 0 0 4px color-mix(in srgb, var(--color-bronze-500) 45%, transparent),
+    0 10px 30px -12px rgb(0 0 0 / 0.7);
+}
+
+@utility text-engraved {
+  text-shadow:
+    0 1px 0 rgb(0 0 0 / 0.6),
+    0 0 18px rgb(227 194 122 / 0.12);
+}
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-bronze-700) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
