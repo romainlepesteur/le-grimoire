@@ -21,6 +21,21 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Bibliothèques dans leurs propres fichiers : elles changent rarement, donc une mise à jour
+        // de l'application ne fait retélécharger que le code du Grimoire.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (/[\\/]node_modules[\\/](react|react-dom|react-router|scheduler)[\\/]/.test(id)) return 'vendor-react';
+          if (/[\\/]node_modules[\\/](motion|framer-motion|motion-dom|motion-utils)[\\/]/.test(id)) return 'vendor-motion';
+          if (/[\\/]node_modules[\\/](dexie|dexie-react-hooks|zod|zustand|nanoid)[\\/]/.test(id)) return 'vendor-data';
+          return undefined;
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),

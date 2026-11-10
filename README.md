@@ -15,9 +15,9 @@ carte avec brouillard de découverte, fiches, dés, inventaire et journal.
 | 2 — Immersion | Création/édition des lieux, import d’illustrations, moteur audio multicouche, ambiances | ✅ terminée |
 | 3 — Carte | Carte interactive, marqueurs, brouillard, révélation au pinceau | ✅ terminée |
 | 4 — Outils JDR | Dés, fiches, compagnons, inventaire, journal, ajout rapide | ✅ terminée |
-| 5 — Finalisation | Tests de bout en bout, optimisation, documentation complète | à faire |
+| 5 — Finalisation | Tests de bout en bout, chargement par écran, hors ligne vérifié, documentation | ✅ terminée |
 
-Les écrans des phases suivantes sont présents mais affichent clairement « Prévu en phase N ».
+**Documentation** : [guide d’utilisation](docs/guide.md) · [architecture et migration Proxmox](docs/architecture.md) · [guide des illustrations](docs/illustrations.md).
 
 ## Développement (Windows)
 
@@ -26,7 +26,7 @@ Prérequis : [Node.js LTS](https://nodejs.org) et Git.
 ```bash
 npm install
 npm run dev        # serveur de développement (http://localhost:5173, accessible sur le réseau local)
-npm test           # tests unitaires
+npm test           # tests : logique, données, sauvegardes, interface de bout en bout
 npm run build      # version de production dans dist/
 npm run preview    # sert dist/ (http://localhost:4173) — permet de tester le hors-ligne
 ```
@@ -48,13 +48,16 @@ Une fois installée, l’application fonctionne sans connexion. Les mises à jou
 ```
 src/
   app/          démarrage, routes, cadre (barre latérale, barre inférieure), PWA
-  ui/           design system : Panel, Button, Sheet, Dialog, Badge, illustrations provisoires…
-  domain/       modèles de données (schémas Zod = types + validation), identifiants
+  ui/           système visuel : panneaux, boutons, tiroirs, dialogues, champs, filet d’erreur
+  domain/       logique pure : schémas Zod, identifiants, lieux, dés, jets, saisie rapide
   services/
-    db/         IndexedDB (Dexie) : schéma versionné, accès aux campagnes, lieux, médias, réglages
-    backup/     export/import des sauvegardes (.zip : grimoire.json + media/)
+    db/         IndexedDB (Dexie) : campagnes, lieux, médias, ambiances, cartes, partie
+    backup/     export/import des sauvegardes (.zip : grimoire.json + media/), compatibilité
+    audio/      moteur d’ambiance (Web Audio) ; media/ : préparation des images et sons
     storage.ts  quota, stockage persistant
-  features/     écrans : exploration, réglages, (phases suivantes)
+  features/     écrans et outils : exploration, carte, ambiances, fiches, inventaire, journal,
+                dés, ajout rapide, réglages
+  test/         configuration et tests d’interface de bout en bout
   hooks/        accès réactif aux données, écran allumé, plein écran
   stores/       état d’interface (Zustand) : mode Jeu/Préparation, notifications, PWA
   data/demo/    campagne d’exemple (Valdoren), marquée « Exemple »

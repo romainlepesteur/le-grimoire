@@ -93,6 +93,7 @@ export function NavRail({ backupDue, onRequestMode }: { backupDue: boolean; onRe
         onClick={onRequestMode}
         aria-pressed={prep}
         title={prep ? 'Revenir au mode Jeu' : 'Passer en mode Préparation'}
+        aria-label={prep ? 'Revenir au mode Jeu' : 'Passer en mode Préparation'}
         className={cn(
           'mt-1 flex h-[72px] w-full shrink-0 [@media(max-height:700px)]:h-[60px] flex-col items-center justify-center gap-1 overflow-hidden rounded-lg border transition-colors duration-500 active:scale-95',
           prep

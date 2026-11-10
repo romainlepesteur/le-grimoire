@@ -1,19 +1,33 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState, type ComponentType } from 'react';
 import { HashRouter, Route, Routes } from 'react-router';
 import { MotionConfig } from 'motion/react';
 import { AppShell } from './AppShell';
 import { bootstrap } from './bootstrap';
 import { useSession } from '@/stores/session';
 import { ExplorationPage } from '@/features/exploration/ExplorationPage';
-import { SettingsPage } from '@/features/settings/SettingsPage';
-import { AmbiancesPage } from '@/features/audio/AmbiancesPage';
-import { CharactersPage } from '@/features/characters/CharactersPage';
-import { InventoryPage } from '@/features/inventory/InventoryPage';
-import { JournalPage } from '@/features/journal/JournalPage';
 import { Panel } from '@/ui/Panel';
 
-// La carte (Leaflet) n'est chargée qu'à la première ouverture de l'écran Carte.
-const MapPage = lazy(() => import('@/features/map/MapPage'));
+/**
+ * Chaque écran secondaire est un fichier séparé, chargé à sa première ouverture :
+ * le démarrage ne charge que l'Exploration. Tous les fichiers restent en cache
+ * (service worker), donc disponibles hors ligne.
+ */
+function lazyScreen(load: () => Promise<{ default: ComponentType }>): ComponentType {
+  const Lazy = lazy(load); // créé une seule fois, au chargement du module
+  return function Screen() {
+    return (
+      <Suspense fallback={null}>
+        <Lazy />
+      </Suspense>
+    );
+  };
+}
+const MapPage = lazyScreen(() => import('@/features/map/MapPage'));
+const CharactersPage = lazyScreen(() => import('@/features/characters/CharactersPage').then((m) => ({ default: m.CharactersPage })));
+const InventoryPage = lazyScreen(() => import('@/features/inventory/InventoryPage').then((m) => ({ default: m.InventoryPage })));
+const JournalPage = lazyScreen(() => import('@/features/journal/JournalPage').then((m) => ({ default: m.JournalPage })));
+const AmbiancesPage = lazyScreen(() => import('@/features/audio/AmbiancesPage').then((m) => ({ default: m.AmbiancesPage })));
+const SettingsPage = lazyScreen(() => import('@/features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 
 function Splash({ error }: { error?: string }) {
   return (
@@ -59,14 +73,7 @@ export function App() {
       <Routes>
         <Route element={<AppShell />}>
           <Route index element={<ExplorationPage />} />
-          <Route
-            path="carte"
-            element={
-              <Suspense fallback={null}>
-                <MapPage />
-              </Suspense>
-            }
-          />
+          <Route path="carte" element={<MapPage />} />
           <Route path="personnages" element={<CharactersPage />} />
           <Route path="inventaire" element={<InventoryPage />} />
           <Route path="journal" element={<JournalPage />} />
