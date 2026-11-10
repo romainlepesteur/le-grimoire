@@ -290,6 +290,26 @@
   transform-origin: bottom;
 }
 
+/*
+ * Fluidité sur tablette :
+ * - brumes et lent zoom sur leur propre couche graphique : le flou est calculé une fois,
+ *   puis seulement déplacé (sinon il est recalculé à chaque image) ;
+ * - en pause sous un tiroir ou un dialogue (<html data-overlay>), pour laisser toute la
+ *   puissance à l'animation du panneau.
+ */
+.animate-mist-a,
+.animate-mist-b,
+.animate-slow-zoom {
+  will-change: transform;
+  backface-visibility: hidden;
+}
+[data-overlay] .animate-mist-a,
+[data-overlay] .animate-mist-b,
+[data-overlay] .animate-slow-zoom,
+[data-overlay] .animate-eq {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

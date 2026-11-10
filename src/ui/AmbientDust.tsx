@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { overlayOpen } from './overlay';
 
 /**
  * Poussières en suspension, très discrètes, au-dessus d'une illustration.
@@ -46,6 +47,7 @@ export function AmbientDust({ className }: { className?: string }) {
     const frame = (t: number) => {
       raf = requestAnimationFrame(frame);
       if (t - last < 33) return; // ~30 fps suffisent
+      if (overlayOpen()) return; // en pause sous un tiroir ou un dialogue
       last = t;
       ctx.clearRect(0, 0, w, h);
       ctx.globalCompositeOperation = 'lighter';

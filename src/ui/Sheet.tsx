@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 import { cn } from './cn';
 import { IconButton } from './Button';
 import { EASE_OUT } from './motion';
+import { useOverlayOpen } from './overlay';
 
 export interface SheetProps {
   open: boolean;
@@ -20,6 +21,7 @@ export interface SheetProps {
 
 /** Tiroir latéral ou inférieur : glisse par-dessus l'écran courant, sans changer de page. */
 export function Sheet({ open, onClose, title, subtitle, side = 'right', sizeClass, children, footer }: SheetProps) {
+  useOverlayOpen(open);
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -34,7 +36,7 @@ export function Sheet({ open, onClose, title, subtitle, side = 'right', sizeClas
       {open && (
         <div className="fixed inset-0 z-40" role="dialog" aria-modal="true">
           <motion.div
-            className="absolute inset-0 bg-leather-950/65 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-leather-950/75"
             onClick={onClose}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

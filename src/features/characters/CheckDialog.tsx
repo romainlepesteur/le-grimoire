@@ -23,6 +23,7 @@ import { Button, IconButton } from '@/ui/Button';
 import { Segmented } from '@/ui/Segmented';
 import { EASE_OUT } from '@/ui/motion';
 import { cn } from '@/ui/cn';
+import { useOverlayOpen } from '@/ui/overlay';
 import { useRules } from '@/features/play/hooks';
 
 const DC_PRESETS = [
@@ -65,6 +66,7 @@ export function CheckDialog() {
   }, [request, close]);
 
   const open = !!request && !!character;
+  useOverlayOpen(open);
   const parts = character && request ? targetParts(character, rules, request.target) : [];
   const name = request ? targetName(rules, request.target) : '';
   const bonus = partsTotal(parts);
@@ -108,7 +110,7 @@ export function CheckDialog() {
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={`Jet : ${name}`}>
           <motion.div
-            className="absolute inset-0 bg-leather-950/70 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-leather-950/80"
             onClick={close}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

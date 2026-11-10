@@ -49,7 +49,7 @@ export function QuickCapture() {
   // Le champ prend le focus dès l'ouverture : on tape directement.
   useEffect(() => {
     if (!quickOpen) return;
-    const t = window.setTimeout(() => (tab === 'objet' ? itemInput.current : tab === 'note' ? noteInput.current : null)?.focus(), 350);
+    const t = window.setTimeout(() => (tab === 'objet' ? itemInput.current : tab === 'note' ? noteInput.current : null)?.focus({ preventScroll: true }), 560);
     return () => window.clearTimeout(t);
   }, [quickOpen, tab]);
 

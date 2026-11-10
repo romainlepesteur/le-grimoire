@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Button } from './Button';
 import { Panel } from './Panel';
 import { EASE_OUT } from './motion';
+import { useOverlayOpen } from './overlay';
 
 export interface DialogProps {
   open: boolean;
@@ -14,6 +15,7 @@ export interface DialogProps {
 }
 
 export function Dialog({ open, onClose, title, children, actions }: DialogProps) {
+  useOverlayOpen(open);
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -26,7 +28,7 @@ export function Dialog({ open, onClose, title, children, actions }: DialogProps)
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="alertdialog" aria-modal="true">
           <motion.div
-            className="absolute inset-0 bg-leather-950/70 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-leather-950/80"
             onClick={onClose}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
