@@ -21,6 +21,9 @@ export const BACKUP_FORMAT_VERSION = 1;
 export const BACKUP_DATA_FILE = 'grimoire.json';
 export const mediaPath = (mediaId: string) => `media/${mediaId}`;
 
+/** Plafond par table : très au-delà d'une vraie campagne, il borne le travail de validation. */
+const MAX_ROWS = 100_000;
+
 export const backupSchema = z.object({
   format: z.literal(BACKUP_FORMAT),
   formatVersion: z.number().int().positive(),
@@ -29,16 +32,16 @@ export const backupSchema = z.object({
   exportedAt: z.string(),
   campaign: campaignSchema,
   tables: z.object({
-    locations: z.array(locationSchema).default([]),
-    mediaMeta: z.array(mediaMetaSchema).default([]),
-    ambiances: z.array(ambianceSchema).default([]),
-    maps: z.array(mapSchema).default([]),
-    markers: z.array(markerSchema).default([]),
-    fogMasks: z.array(fogMaskSchema).default([]),
-    characters: z.array(genericRowSchema).default([]),
-    items: z.array(genericRowSchema).default([]),
-    journal: z.array(genericRowSchema).default([]),
-    diceRolls: z.array(genericRowSchema).default([]),
+    locations: z.array(locationSchema).max(MAX_ROWS).default([]),
+    mediaMeta: z.array(mediaMetaSchema).max(MAX_ROWS).default([]),
+    ambiances: z.array(ambianceSchema).max(MAX_ROWS).default([]),
+    maps: z.array(mapSchema).max(MAX_ROWS).default([]),
+    markers: z.array(markerSchema).max(MAX_ROWS).default([]),
+    fogMasks: z.array(fogMaskSchema).max(MAX_ROWS).default([]),
+    characters: z.array(genericRowSchema).max(MAX_ROWS).default([]),
+    items: z.array(genericRowSchema).max(MAX_ROWS).default([]),
+    journal: z.array(genericRowSchema).max(MAX_ROWS).default([]),
+    diceRolls: z.array(genericRowSchema).max(MAX_ROWS).default([]),
   }),
 });
 export type Backup = z.infer<typeof backupSchema>;

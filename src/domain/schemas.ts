@@ -147,7 +147,7 @@ export const ambianceSchema = z.object({
   campaignId: id,
   name: z.string().trim().min(1).max(200),
   category: z.string().max(100).default('Exploration'),
-  layers: z.array(ambianceLayerSchema).default([]),
+  layers: z.array(ambianceLayerSchema).max(64).default([]),
   isDemo: z.boolean().default(false),
   createdAt: timestamp,
   updatedAt: timestamp,
@@ -196,8 +196,9 @@ export const markerSchema = z.object({
   locationId: id.nullable().default(null),
   label: z.string().max(200).default(''),
   note: z.string().max(2000).default(''),
-  x: z.number().finite(),
-  y: z.number().finite(),
+  // Zod 4 refuse déjà Infinity et NaN pour z.number().
+  x: z.number(),
+  y: z.number(),
   status: z.enum(MARKER_STATUSES).default('connu'),
   /** Rayon de la zone d'incertitude d'une rumeur (pixels de la carte). */
   radius: z.number().positive().max(100000).default(150),
@@ -225,10 +226,9 @@ export type FogMask = z.infer<typeof fogMaskSchema>;
 // les transporte déjà, avec une validation minimale.
 // ---------------------------------------------------------------------------
 
-export const genericRowSchema = z
-  .object({
-    id,
-    campaignId: id,
-  })
-  .passthrough();
+// looseObject : les champs inconnus sont conservés (structure fixée dans leur phase).
+export const genericRowSchema = z.looseObject({
+  id,
+  campaignId: id,
+});
 export type GenericRow = z.infer<typeof genericRowSchema>;
