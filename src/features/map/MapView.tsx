@@ -10,6 +10,8 @@ export type MapTool = 'move' | 'reveal' | 'cover' | 'place';
 export interface MapViewApi {
   undo: () => void;
   fill: (mode: BrushMode) => void;
+  /** Révèle un disque centré sur (x, y), rayon en pixels de carte. */
+  revealAround: (x: number, y: number, r: number) => void;
   flyTo: (x: number, y: number) => void;
   fitAll: () => void;
   zoom: (delta: number) => void;
@@ -29,6 +31,8 @@ export interface MapViewProps {
   editable: boolean;
   tool: MapTool;
   brushSize: number;
+  /** Aperçu du disque « révéler autour » (pixels de carte), ou null. */
+  revealPreview: { x: number; y: number; r: number } | null;
   currentLocationId: string | null;
   selectedMarkerId: string | null;
   onSelectMarker: (id: string | null) => void;
@@ -346,6 +350,24 @@ export function MapView(props: MapViewProps) {
     imageUrl,
   ]);
 
+  // Aperçu du disque à révéler.
+  useEffect(() => {
+    const m = lmap.current;
+    const p = props.revealPreview;
+    if (!m || !p) return;
+    const c = L.circle(toLatLng(p.x, p.y), {
+      radius: p.r,
+      color: '#e3c27a',
+      weight: 2,
+      dashArray: '4 6',
+      fillColor: '#e3c27a',
+      fillOpacity: 0.12,
+      interactive: false,
+    }).addTo(m);
+    return () => void c.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.revealPreview?.x, props.revealPreview?.y, props.revealPreview?.r, map.id, imageUrl]);
+
   useImperativeHandle(
     apiRef,
     () => ({
@@ -360,6 +382,14 @@ export function MapView(props: MapViewProps) {
         const f = fog.current;
         if (!f) return;
         f.fill(mode);
+        live.current.onUndoChange(true);
+        persistSoon();
+      },
+      revealAround: (x, y, r) => {
+        const f = fog.current;
+        if (!f) return;
+        const k = f.width / map.width;
+        f.revealCircle(x * k, y * k, r * k);
         live.current.onUndoChange(true);
         persistSoon();
       },

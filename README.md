@@ -75,12 +75,14 @@ les données de Chrome supprime la campagne. Exportez régulièrement et gardez 
 Écran **Carte** : une ou plusieurs cartes importées (monde, région, plan de ville), zoomables au doigt.
 
 - **Brouillard** (exploration géographique) : il recouvre toute la carte ; en mode Préparation, le
-  pinceau **Révéler** le dissipe au fil de l'exploration, **Recouvrir** le remet, avec annulation.
+  pinceau **Révéler** le dissipe au fil de l'exploration, **Recouvrir** le remet, avec annulation ;
+  **Révéler autour de la position** dissipe d'un coup un disque de rayon réglable autour du lieu actuel.
 - **Marqueurs** (découverte des lieux), indépendants du brouillard : un lieu peut être **caché**
   (invisible pour le joueur), connu par **rumeur** (une zone approximative, volontairement décentrée)
   ou **connu** (position exacte). Se rendre dans un lieu le rend connu automatiquement.
 - **Voir comme le joueur** : aperçu exact du mode Jeu depuis la Préparation.
-- En mode Jeu, la carte se consulte seulement ; toucher un lieu permet de s'y rendre.
+- En mode Jeu, la carte se consulte seulement. Toucher un lieu ouvre sa fiche sans rien changer :
+  déplacer le personnage demande une confirmation explicite (à faire quand le MJ l'annonce).
 
 ## Contenus
 

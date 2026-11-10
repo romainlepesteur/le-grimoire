@@ -16,7 +16,9 @@ import {
   Maximize,
   Minus,
   Plus,
+  Radar,
   Undo2,
+  X,
 } from 'lucide-react';
 import type { Location } from '@/domain/schemas';
 import { useActiveCampaign, useCampaignLocations } from '@/hooks/data';
@@ -80,6 +82,9 @@ export function MapPage() {
   const [managerOpen, setManagerOpen] = useState(false);
   const [confirmFill, setConfirmFill] = useState<'reveal' | 'cover' | null>(null);
   const [editor, setEditor] = useState<LocationEditorTarget | null>(null);
+  /** Outil « Révéler autour de la position » : ouvert ? rayon en fraction du grand côté de la carte. */
+  const [aroundOpen, setAroundOpen] = useState(false);
+  const [aroundRadius, setAroundRadius] = useState(0.08);
   const api = useRef<MapViewApi>(null);
 
   // Hors Préparation : uniquement consulter.
@@ -89,6 +94,7 @@ export function MapPage() {
       setPreview(false);
       setPlacing(null);
       setPendingLocation(null);
+      setAroundOpen(false);
     }
   }, [isPrep]);
 
@@ -126,6 +132,11 @@ export function MapPage() {
   const visibleMarkers = playerView ? markers.filter((m) => m.status !== 'cache') : markers;
   const selectedMarker = visibleMarkers.find((m) => m.id === selected);
   const currentMarker = markers.find((m) => m.locationId === currentLocationId && (!playerView || m.status === 'connu'));
+  // En Préparation, la position compte même si son marqueur est encore caché au joueur.
+  const prepPositionMarker = markers.find((m) => m.locationId === currentLocationId);
+  const aroundPx = map ? Math.round(aroundRadius * Math.max(map.width, map.height)) : 0;
+  const revealPreview =
+    aroundOpen && editable && prepPositionMarker ? { x: prepPositionMarker.x, y: prepPositionMarker.y, r: aroundPx } : null;
 
   const pathLabel = (l: Location | undefined) => {
     const names: string[] = [];
@@ -206,6 +217,7 @@ export function MapPage() {
           editable={editable}
           tool={editable ? tool : 'move'}
           brushSize={brushSize}
+          revealPreview={revealPreview}
           currentLocationId={currentLocationId}
           selectedMarkerId={selected}
           onSelectMarker={setSelected}
@@ -304,6 +316,25 @@ export function MapPage() {
                   <Undo2 className="size-5" />
                 </IconButton>
                 <IconButton
+                  label={
+                    prepPositionMarker
+                      ? 'Révéler autour de la position actuelle'
+                      : 'Révéler autour de la position (placez d’abord le lieu actuel sur la carte)'
+                  }
+                  active={aroundOpen && !preview}
+                  disabled={preview || !prepPositionMarker}
+                  onClick={() => {
+                    const open = !aroundOpen;
+                    setAroundOpen(open);
+                    if (open && prepPositionMarker) {
+                      setTool('move');
+                      api.current?.flyTo(prepPositionMarker.x, prepPositionMarker.y);
+                    }
+                  }}
+                >
+                  <Radar className="size-5" />
+                </IconButton>
+                <IconButton
                   label={preview ? 'Quitter l’aperçu joueur' : 'Voir comme le joueur'}
                   active={preview}
                   onClick={() => {
@@ -318,6 +349,7 @@ export function MapPage() {
               <AnimatePresence>
                 {brushing && !preview && (
                   <motion.div
+                    key="brush"
                     initial={{ opacity: 0, y: -6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -6 }}
@@ -345,8 +377,44 @@ export function MapPage() {
                     </Floating>
                   </motion.div>
                 )}
+                {aroundOpen && !preview && prepPositionMarker && (
+                  <motion.div
+                    key="around"
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    <Floating className="flex items-center gap-3 whitespace-nowrap px-3 py-1.5">
+                      <Radar className="size-5 text-gold-300" />
+                      <span className="min-w-0 max-w-64 truncate text-base text-parchment-200">
+                        Autour de « {locations.get(prepPositionMarker.locationId!)?.name ?? 'la position'} »
+                      </span>
+                      <Slider
+                        label="Rayon à révéler"
+                        className="w-24 shrink-0 xl:w-36"
+                        value={(aroundRadius - 0.02) / 0.28}
+                        onChange={(v) => setAroundRadius(0.02 + v * 0.28)}
+                      />
+                      <span className="w-16 text-right text-sm tabular-nums text-parchment-400">{aroundPx} px</span>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => {
+                          api.current?.revealAround(prepPositionMarker.x, prepPositionMarker.y, aroundPx);
+                          toast({ tone: 'success', title: 'Zone révélée', message: 'Le bouton Annuler permet de revenir en arrière.' });
+                        }}
+                      >
+                        Révéler
+                      </Button>
+                      <IconButton label="Fermer" onClick={() => setAroundOpen(false)}>
+                        <X className="size-5" />
+                      </IconButton>
+                    </Floating>
+                  </motion.div>
+                )}
                 {(tool === 'place' || pendingLocation) && !preview && (
-                  <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.25 }}>
+                  <motion.div key="place" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.25 }}>
                     <Floating className="flex items-center gap-2 border-gold-300/50 px-4 py-2.5 text-base text-gold-200">
                       <Crosshair className="size-5" />
                       {pendingLocation
@@ -356,7 +424,7 @@ export function MapPage() {
                   </motion.div>
                 )}
                 {preview && (
-                  <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
+                  <motion.div key="preview" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
                     <Floating className="px-4 py-2.5 text-base text-parchment-200">
                       Aperçu : la carte telle que le joueur la voit en mode Jeu.
                     </Floating>

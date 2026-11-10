@@ -16,6 +16,7 @@ import { deleteMarker, saveMarker } from '@/services/db/maps';
 import { toast } from '@/stores/toasts';
 import { Badge } from '@/ui/Badge';
 import { Button, IconButton } from '@/ui/Button';
+import { ConfirmDialog } from '@/ui/Dialog';
 import { EmptyIllustration } from '@/ui/EmptyIllustration';
 import { Field, Select, Slider, TextArea, TextInput } from '@/ui/Field';
 import { Panel } from '@/ui/Panel';
@@ -49,6 +50,7 @@ export function MarkerPanel({
   const thumb = useMediaUrl(location?.imageId);
   const [label, setLabel] = useState(marker.label);
   const [note, setNote] = useState(marker.note);
+  const [confirmTravel, setConfirmTravel] = useState(false);
   useEffect(() => {
     setLabel(marker.label);
     setNote(marker.note);
@@ -107,17 +109,8 @@ export function MarkerPanel({
                   Voir le lieu
                 </Button>
               ) : (
-                <Button
-                  size="sm"
-                  variant="primary"
-                  icon={<Navigation className="size-4" />}
-                  onClick={() =>
-                    void travelTo(campaignId, location.id)
-                      .then(() => toast({ tone: 'success', title: `Vous êtes à : ${location.name}` }))
-                      .catch((e: Error) => toast({ tone: 'error', title: e.message }))
-                  }
-                >
-                  S’y rendre
+                <Button size="sm" variant="secondary" icon={<Navigation className="size-4" />} onClick={() => setConfirmTravel(true)}>
+                  Déplacer le personnage ici…
                 </Button>
               )}
             </div>
@@ -177,6 +170,26 @@ export function MarkerPanel({
           )}
         </div>
       </Panel>
+      {location && (
+        <ConfirmDialog
+          open={confirmTravel}
+          title={`Déplacer le personnage à « ${location.name} » ?`}
+          message={
+            <>
+              Consulter un lieu sur la carte ne déplace jamais le personnage. Confirmez seulement si le MJ vient de
+              vous y amener : ce lieu deviendra le lieu actuel{marker.status !== 'connu' ? ' et sera marqué comme connu sur la carte' : ''}.
+            </>
+          }
+          confirmLabel="Déplacer le personnage"
+          onCancel={() => setConfirmTravel(false)}
+          onConfirm={() => {
+            setConfirmTravel(false);
+            void travelTo(campaignId, location.id)
+              .then(() => toast({ tone: 'success', title: `Vous êtes à : ${location.name}` }))
+              .catch((e: Error) => toast({ tone: 'error', title: e.message }));
+          }}
+        />
+      )}
     </motion.div>
   );
 }

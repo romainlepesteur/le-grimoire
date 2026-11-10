@@ -154,6 +154,21 @@ export class Fog {
     this.render();
   }
 
+  /** Révèle un disque (bord fondu) : « révéler autour de la position ». Annulable. */
+  revealCircle(x: number, y: number, r: number) {
+    this.snapshot();
+    const g = this.mctx;
+    const grad = g.createRadialGradient(x, y, r * 0.7, x, y, r);
+    grad.addColorStop(0, 'rgba(255,255,255,1)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    g.globalCompositeOperation = 'source-over';
+    g.fillStyle = grad;
+    g.beginPath();
+    g.arc(x, y, r, 0, Math.PI * 2);
+    g.fill();
+    this.render();
+  }
+
   private stamp(x: number, y: number, r: number, mode: BrushMode) {
     const g = this.mctx;
     const grad = g.createRadialGradient(x, y, r * 0.35, x, y, r);
