@@ -221,6 +221,176 @@ export const fogMaskSchema = z.object({
 export type FogMask = z.infer<typeof fogMaskSchema>;
 
 // ---------------------------------------------------------------------------
+// Fiches : le personnage joueur et ses compagnons. Système de règles libre :
+// les caractéristiques sont de simples paires libellé / valeur.
+// ---------------------------------------------------------------------------
+
+export const CHARACTER_KINDS = ['pj', 'compagnon'] as const;
+export type CharacterKind = (typeof CHARACTER_KINDS)[number];
+
+export const COMPANION_STATUSES = ['present', 'blesse', 'parti', 'mort'] as const;
+export type CompanionStatus = (typeof COMPANION_STATUSES)[number];
+export const COMPANION_STATUS_LABELS: Record<CompanionStatus, string> = {
+  present: 'Présent',
+  blesse: 'Blessé',
+  parti: 'Parti',
+  mort: 'Mort',
+};
+
+export const statSchema = z.object({
+  id,
+  label: z.string().max(60),
+  value: z.string().max(60),
+});
+export type Stat = z.infer<typeof statSchema>;
+
+export const characterSchema = z.object({
+  id,
+  campaignId: id,
+  kind: z.enum(CHARACTER_KINDS),
+  name: z.string().trim().min(1).max(200),
+  /** Classe, peuple, métier… en une ligne. */
+  concept: z.string().max(300).default(''),
+  portraitId: id.nullable().default(null),
+  hpCurrent: z.number().int().min(-9999).max(99999).default(10),
+  hpMax: z.number().int().min(0).max(99999).default(10),
+  stats: z.array(statSchema).max(60).default([]),
+  /** États temporaires : empoisonné, épuisé… */
+  conditions: z.array(z.string().max(60)).max(30).default([]),
+  coins: z
+    .object({
+      po: z.number().int().min(0).default(0),
+      pa: z.number().int().min(0).default(0),
+      pc: z.number().int().min(0).default(0),
+    })
+    .default({ po: 0, pa: 0, pc: 0 }),
+  /** Compagnons : présence et relation avec le personnage. */
+  status: z.enum(COMPANION_STATUSES).default('present'),
+  relation: z.string().max(300).default(''),
+  notes: z.string().max(20000).default(''),
+  sortOrder: z.number().default(0),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type Character = z.infer<typeof characterSchema>;
+
+// ---------------------------------------------------------------------------
+// Inventaire
+// ---------------------------------------------------------------------------
+
+export const ITEM_CATEGORIES = [
+  'arme',
+  'armure',
+  'potion',
+  'magique',
+  'document',
+  'cle',
+  'outil',
+  'vivres',
+  'tresor',
+  'divers',
+] as const;
+export type ItemCategory = (typeof ITEM_CATEGORIES)[number];
+export const ITEM_CATEGORY_LABELS: Record<ItemCategory, string> = {
+  arme: 'Armes',
+  armure: 'Armures et vêtements',
+  potion: 'Potions et remèdes',
+  magique: 'Objets magiques',
+  document: 'Documents et cartes',
+  cle: 'Clés',
+  outil: 'Outils et équipement',
+  vivres: 'Vivres',
+  tresor: 'Trésors et valeurs',
+  divers: 'Divers',
+};
+
+export const itemSchema = z.object({
+  id,
+  campaignId: id,
+  /** Porteur (fiche) ; null = sac commun du groupe. */
+  ownerId: id.nullable().default(null),
+  name: z.string().trim().min(1).max(200),
+  quantity: z.number().int().min(0).max(999999).default(1),
+  category: z.enum(ITEM_CATEGORIES).default('divers'),
+  equipped: z.boolean().default(false),
+  weight: z.number().min(0).max(100000).nullable().default(null),
+  description: z.string().max(5000).default(''),
+  /** Lieu où l'objet a été obtenu (renseigné automatiquement à l'ajout). */
+  foundAtId: id.nullable().default(null),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type Item = z.infer<typeof itemSchema>;
+
+// ---------------------------------------------------------------------------
+// Journal de campagne
+// ---------------------------------------------------------------------------
+
+export const JOURNAL_KINDS = ['note', 'evenement', 'rencontre', 'quete', 'decision', 'rumeur'] as const;
+export type JournalKind = (typeof JOURNAL_KINDS)[number];
+export const JOURNAL_KIND_LABELS: Record<JournalKind, string> = {
+  note: 'Note',
+  evenement: 'Événement',
+  rencontre: 'Rencontre',
+  quete: 'Quête',
+  decision: 'Décision',
+  rumeur: 'Rumeur',
+};
+export const QUEST_STATUSES = ['en_cours', 'terminee', 'echouee'] as const;
+export type QuestStatus = (typeof QUEST_STATUSES)[number];
+export const QUEST_STATUS_LABELS: Record<QuestStatus, string> = {
+  en_cours: 'En cours',
+  terminee: 'Terminée',
+  echouee: 'Échouée',
+};
+
+export const journalEntrySchema = z.object({
+  id,
+  campaignId: id,
+  kind: z.enum(JOURNAL_KINDS).default('note'),
+  title: z.string().max(300).default(''),
+  body: z.string().max(50000).default(''),
+  /** Date dans le monde du jeu, en texte libre (« 3e jour de la lune des moissons »). */
+  gameDate: z.string().max(120).default(''),
+  locationId: id.nullable().default(null),
+  questStatus: z.enum(QUEST_STATUSES).default('en_cours'),
+  pinned: z.boolean().default(false),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type JournalEntry = z.infer<typeof journalEntrySchema>;
+
+// ---------------------------------------------------------------------------
+// Lancers de dés (historique)
+// ---------------------------------------------------------------------------
+
+export const DICE_SIDES = [4, 6, 8, 10, 12, 20, 100] as const;
+export const ROLL_MODES = ['normal', 'avantage', 'desavantage'] as const;
+export type RollMode = (typeof ROLL_MODES)[number];
+
+export const diceGroupSchema = z.object({
+  sides: z.number().int().min(2).max(1000),
+  values: z.array(z.number().int()).max(200),
+  /** Indices des dés retenus (avantage / désavantage) ; absent = tous. */
+  kept: z.array(z.number().int()).max(200).optional(),
+});
+export type DiceGroup = z.infer<typeof diceGroupSchema>;
+
+export const diceRollSchema = z.object({
+  id,
+  campaignId: id,
+  /** Formule lisible : « 2d6+3 », « 1d20 avec avantage ». */
+  formula: z.string().max(200),
+  label: z.string().max(200).default(''),
+  groups: z.array(diceGroupSchema).max(20),
+  modifier: z.number().int().default(0),
+  total: z.number().int(),
+  mode: z.enum(ROLL_MODES).default('normal'),
+  createdAt: timestamp,
+});
+export type DiceRoll = z.infer<typeof diceRollSchema>;
+
+// ---------------------------------------------------------------------------
 // Tables des phases suivantes (fiches, inventaire, journal, dés).
 // Leur structure détaillée sera fixée dans leur phase ; la sauvegarde
 // les transporte déjà, avec une validation minimale.

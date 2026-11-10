@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
-import { Dices, Expand, MapPin, Shrink, WifiOff } from 'lucide-react';
+import { Dices, Expand, MapPin, PenLine, Shrink, WifiOff } from 'lucide-react';
 import { AudioControl } from '@/features/audio/AudioControl';
 import { useCurrentPlace } from '@/hooks/data';
 import { useFullscreen, useOnline } from '@/hooks/device';
@@ -11,6 +11,7 @@ import { Button, IconButton } from '@/ui/Button';
 export function StatusBar() {
   const { location } = useCurrentPlace();
   const setDiceOpen = useSession((s) => s.setDiceOpen);
+  const setQuickOpen = useSession((s) => s.setQuickOpen);
   const fullscreen = useFullscreen();
   const online = useOnline();
 
@@ -49,6 +50,16 @@ export function StatusBar() {
           {fullscreen.active ? <Shrink className="size-5" /> : <Expand className="size-5" />}
         </IconButton>
       )}
+      <Button
+        variant="secondary"
+        size="md"
+        icon={<PenLine className="size-5" strokeWidth={1.7} />}
+        onClick={() => setQuickOpen(true)}
+        title="Ajouter un objet, une note, modifier les points de vie (touche N)"
+        className="rounded-full px-4 font-display text-base tracking-wider"
+      >
+        Noter
+      </Button>
       <Button
         variant="primary"
         size="md"

@@ -7,7 +7,9 @@ import { useSession } from '@/stores/session';
 import { ExplorationPage } from '@/features/exploration/ExplorationPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { AmbiancesPage } from '@/features/audio/AmbiancesPage';
-import { CharactersPage, InventoryPage, JournalPage } from '@/features/placeholders/pages';
+import { CharactersPage } from '@/features/characters/CharactersPage';
+import { InventoryPage } from '@/features/inventory/InventoryPage';
+import { JournalPage } from '@/features/journal/JournalPage';
 import { Panel } from '@/ui/Panel';
 
 // La carte (Leaflet) n'est chargée qu'à la première ouverture de l'écran Carte.

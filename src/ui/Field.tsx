@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { cn } from './cn';
 
 /** Contrôles de formulaire sur fond cuir (tiroirs de Préparation). Zones tactiles ≥ 48 px. */
@@ -16,15 +16,15 @@ export function Field({ label, hint, children, className }: { label: ReactNode; 
 const control =
   'w-full rounded-md border border-bronze-500/35 bg-leather-950/60 text-lg text-parchment-50 placeholder:text-parchment-400/60 outline-none transition-colors focus:border-gold-300/70 focus:bg-leather-950/80';
 
-export function TextInput({ className, ...rest }: InputHTMLAttributes<HTMLInputElement>) {
+export function TextInput({ className, ...rest }: ComponentProps<'input'>) {
   return <input className={cn(control, 'h-12 px-3', className)} {...rest} />;
 }
 
-export function TextArea({ className, ...rest }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+export function TextArea({ className, ...rest }: ComponentProps<'textarea'>) {
   return <textarea className={cn(control, 'min-h-32 resize-y px-3 py-2 leading-relaxed', className)} {...rest} />;
 }
 
-export function Select({ className, children, ...rest }: SelectHTMLAttributes<HTMLSelectElement>) {
+export function Select({ className, children, ...rest }: ComponentProps<'select'>) {
   return (
     <select className={cn(control, 'h-12 appearance-none bg-[length:1.1rem] bg-[right_0.75rem_center] bg-no-repeat pr-10 pl-3 select-chevron', className)} {...rest}>
       {children}

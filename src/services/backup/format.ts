@@ -2,8 +2,11 @@ import { z } from 'zod';
 import {
   ambianceSchema,
   campaignSchema,
+  characterSchema,
+  diceRollSchema,
   fogMaskSchema,
-  genericRowSchema,
+  itemSchema,
+  journalEntrySchema,
   locationSchema,
   mapSchema,
   markerSchema,
@@ -38,10 +41,10 @@ export const backupSchema = z.object({
     maps: z.array(mapSchema).max(MAX_ROWS).default([]),
     markers: z.array(markerSchema).max(MAX_ROWS).default([]),
     fogMasks: z.array(fogMaskSchema).max(MAX_ROWS).default([]),
-    characters: z.array(genericRowSchema).max(MAX_ROWS).default([]),
-    items: z.array(genericRowSchema).max(MAX_ROWS).default([]),
-    journal: z.array(genericRowSchema).max(MAX_ROWS).default([]),
-    diceRolls: z.array(genericRowSchema).max(MAX_ROWS).default([]),
+    characters: z.array(characterSchema).max(MAX_ROWS).default([]),
+    items: z.array(itemSchema).max(MAX_ROWS).default([]),
+    journal: z.array(journalEntrySchema).max(MAX_ROWS).default([]),
+    diceRolls: z.array(diceRollSchema).max(MAX_ROWS).default([]),
   }),
 });
 export type Backup = z.infer<typeof backupSchema>;

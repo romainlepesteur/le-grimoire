@@ -226,12 +226,13 @@ export function SettingsPage() {
           <Panel tone="leather" className="px-6 py-5">
             <SectionTitle className="text-bronze-400">Modes</SectionTitle>
             <p className="mt-2 text-lg text-parchment-200">
-              <strong className="text-gold-200">Jeu</strong> — pour jouer : consultation, navigation, dés. Aucune
-              modification possible par erreur. L’application démarre toujours dans ce mode.
+              <strong className="text-gold-200">Jeu</strong> — pour jouer : dés, fiches (points de vie, états, bourse,
+              notes), inventaire et journal se modifient librement, en quelques secondes (bouton Noter). Le monde reste
+              protégé. L’application démarre toujours dans ce mode.
             </p>
             <p className="mt-2 text-lg text-parchment-200">
-              <strong className="text-gold-200">Préparation</strong> — pour créer et modifier lieux, médias, ambiances et
-              carte. Bouton en bas de la barre de gauche.
+              <strong className="text-gold-200">Préparation</strong> — pour créer et modifier le monde : lieux et
+              illustrations, cartes, brouillard et marqueurs, ambiances et sons. Bouton en bas de la barre de gauche.
             </p>
           </Panel>
         </motion.div>

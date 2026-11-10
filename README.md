@@ -14,7 +14,7 @@ carte avec brouillard de découverte, fiches, dés, inventaire et journal.
 | 1 — Fondations | Projet, design system, navigation, stockage local, PWA, modes Jeu/Préparation, export/import | ✅ terminée |
 | 2 — Immersion | Création/édition des lieux, import d’illustrations, moteur audio multicouche, ambiances | ✅ terminée |
 | 3 — Carte | Carte interactive, marqueurs, brouillard, révélation au pinceau | ✅ terminée |
-| 4 — Outils JDR | Dés, fiches, compagnons, inventaire, journal | à faire |
+| 4 — Outils JDR | Dés, fiches, compagnons, inventaire, journal, ajout rapide | ✅ terminée |
 | 5 — Finalisation | Tests de bout en bout, optimisation, documentation complète | à faire |
 
 Les écrans des phases suivantes sont présents mais affichent clairement « Prévu en phase N ».
@@ -83,6 +83,21 @@ les données de Chrome supprime la campagne. Exportez régulièrement et gardez 
 - **Voir comme le joueur** : aperçu exact du mode Jeu depuis la Préparation.
 - En mode Jeu, la carte se consulte seulement. Toucher un lieu ouvre sa fiche sans rien changer :
   déplacer le personnage demande une confirmation explicite (à faire quand le MJ l'annonce).
+
+## Pendant la partie (mode Jeu)
+
+Les actions courantes restent possibles en mode Jeu ; seul le monde (lieux, cartes, ambiances) est
+réservé au mode Préparation.
+
+- **Noter** (barre du bas, ou touche **N**) : ajout rapide d'un objet (« une vieille clé », « 3 torches »,
+  « potion de soin x2 » : nom, quantité et catégorie sont compris ; un objet déjà porté est cumulé),
+  d'une note de journal, ou de points de vie. Chaque ajout peut être annulé depuis la notification.
+- **Dés** (touche **D**) : d4 à d100, combinables, modificateur, avantage/désavantage, formule libre
+  (« 2d6+3 »). Tirage cryptographique uniforme, enregistré avant l'affichage ; historique exportable.
+- **Fiches** : personnage et compagnons (points de vie, états, bourse, caractéristiques libres,
+  notes ; statut présent/blessé/parti/mort pour les compagnons).
+- **Inventaire** par porteur et sac commun ; **Journal** (notes, événements, rencontres, quêtes,
+  décisions, rumeurs) avec recherche, épingles et export Markdown/JSON.
 
 ## Contenus
 

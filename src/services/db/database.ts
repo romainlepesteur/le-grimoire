@@ -1,5 +1,17 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { Ambiance, Campaign, FogMask, GameMap, GenericRow, Location, MapMarker, MediaMeta } from '@/domain/schemas';
+import type {
+  Ambiance,
+  Campaign,
+  Character,
+  DiceRoll,
+  FogMask,
+  GameMap,
+  Item,
+  JournalEntry,
+  Location,
+  MapMarker,
+  MediaMeta,
+} from '@/domain/schemas';
 
 export interface MediaBlobRow {
   id: string;
@@ -43,10 +55,10 @@ export class GrimoireDB extends Dexie {
   maps!: EntityTable<GameMap, 'id'>;
   markers!: EntityTable<MapMarker, 'id'>;
   fogMasks!: EntityTable<FogMask, 'id'>;
-  characters!: EntityTable<GenericRow, 'id'>;
-  items!: EntityTable<GenericRow, 'id'>;
-  journal!: EntityTable<GenericRow, 'id'>;
-  diceRolls!: EntityTable<GenericRow, 'id'>;
+  characters!: EntityTable<Character, 'id'>;
+  items!: EntityTable<Item, 'id'>;
+  journal!: EntityTable<JournalEntry, 'id'>;
+  diceRolls!: EntityTable<DiceRoll, 'id'>;
   settings!: EntityTable<SettingRow, 'key'>;
 
   constructor(name = 'le-grimoire') {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useOutlet } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import { Feather } from 'lucide-react';
@@ -13,9 +13,36 @@ import { Toaster } from '@/ui/Toaster';
 import { Button } from '@/ui/Button';
 import { ConfirmDialog, Dialog } from '@/ui/Dialog';
 import { Sheet } from '@/ui/Sheet';
-import { ComingSoon } from '@/features/placeholders/ComingSoon';
+import { DicePanel } from '@/features/dice/DicePanel';
+import { QuickCapture } from '@/features/quick/QuickCapture';
 import { MixerSheet } from '@/features/audio/MixerSheet';
 import { useAmbianceDirector } from '@/features/audio/useAmbianceDirector';
+
+/**
+ * Raccourcis clavier (sur ordinateur) : N = ajout rapide, D = dés.
+ * Ignorés pendant la saisie dans un champ.
+ */
+function useGlobalShortcuts() {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      const s = useSession.getState();
+      if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        s.setDiceOpen(false);
+        s.setQuickOpen(true);
+      } else if (e.key === 'd' || e.key === 'D') {
+        e.preventDefault();
+        s.setQuickOpen(false);
+        s.setDiceOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+}
 
 const BACKUP_REMINDER_MS = 3 * 24 * 60 * 60 * 1000;
 
@@ -28,6 +55,7 @@ export function AppShell() {
   const [confirmPrep, setConfirmPrep] = useState(false);
   useWakeLock(settings.wakeLock);
   useAmbianceDirector();
+  useGlobalShortcuts();
 
   // Rappel d'export : modifications non sauvegardées depuis plus de 3 jours.
   const lastExport = settings.lastExportAt;
@@ -78,19 +106,10 @@ export function AppShell() {
         <StatusBar />
       </div>
 
-      <Sheet open={diceOpen} onClose={() => setDiceOpen(false)} title="Dés" subtitle="Lancers rapides, accessibles depuis tous les écrans">
-        <ComingSoon
-          phase={4}
-          compact
-          title="Le module de dés arrive en phase 4"
-          features={[
-            'D4, D6, D8, D10, D12, D20 et D100, seuls ou combinés',
-            'Modificateur, avantage et désavantage',
-            'Tirage cryptographique uniforme, enregistré avant l’affichage',
-            'Historique horodaté et export',
-          ]}
-        />
+      <Sheet open={diceOpen} onClose={() => setDiceOpen(false)} title="Dés" subtitle="Tirage aléatoire sûr, enregistré avant d’être affiché" sizeClass="w-[min(580px,96vw)]">
+        <DicePanel />
       </Sheet>
+      <QuickCapture />
 
       <MixerSheet />
 
@@ -99,8 +118,9 @@ export function AppShell() {
         title="Passer en mode Préparation ?"
         message={
           <>
-            Le mode Préparation permet de créer et modifier les lieux, médias et réglages de la campagne.
-            Pendant une partie, restez en mode Jeu : rien ne peut y être modifié par erreur.
+            Le mode Préparation permet de créer et modifier le monde : lieux, illustrations, cartes, brouillard et
+            ambiances. Pendant une partie, restez en mode Jeu : dés, fiches, inventaire et journal y restent modifiables,
+            mais le monde est protégé des erreurs.
           </>
         }
         confirmLabel="Passer en Préparation"
