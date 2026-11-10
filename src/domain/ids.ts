@@ -20,6 +20,9 @@ export const ID_PREFIXES = {
   journal: 'jrn',
   roll: 'rol',
   stat: 'sta',
+  trait: 'trt',
+  effect: 'eff',
+  rule: 'rul',
 } as const;
 
 export type EntityKind = keyof typeof ID_PREFIXES;

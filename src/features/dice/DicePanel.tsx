@@ -297,10 +297,18 @@ export function DicePanel() {
                   {new Date(r.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-base text-parchment-200">
-                  {r.label && <strong className="font-semibold text-parchment-100">{r.label} · </strong>}
-                  {r.formula}
+                  {r.characterId ? r.formula : (<>{r.label && <strong className="font-semibold text-parchment-100">{r.label} · </strong>}{r.formula}</>)}
                 </span>
-                <span className="w-10 text-right font-display text-lg font-semibold tabular-nums text-gold-200">{r.total}</span>
+                {r.outcome && (
+                  <span
+                    title={r.dc != null ? `Difficulté ${r.dc}` : undefined}
+                    className={cn('shrink-0 rounded-full border px-2 text-xs font-semibold uppercase tracking-wider', r.outcome === 'reussite' ? 'border-forest-500 text-forest-500' : 'border-blood-500 text-blood-500')}
+                  >
+                    {r.outcome === 'reussite' ? 'réussi' : 'échec'}
+                  </span>
+                )}
+                {r.luckReroll && <span className="shrink-0 text-xs italic text-parchment-400">chance</span>}
+                <span title={r.breakdown.length ? r.breakdown.map((p) => `${p.value >= 0 ? '+' : ''}${p.value} ${p.label}`).join(' ') : undefined} className="w-10 text-right font-display text-lg font-semibold tabular-nums text-gold-200">{r.total}</span>
               </motion.li>
             ))}
           </AnimatePresence>

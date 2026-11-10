@@ -99,6 +99,29 @@ réservé au mode Préparation.
 - **Inventaire** par porteur et sac commun ; **Journal** (notes, événements, rencontres, quêtes,
   décisions, rumeurs) avec recherche, épingles et export Markdown/JSON.
 
+## Règles de jeu (configurables)
+
+Un système simple, sans imposer de règles complètes :
+
+> **Résultat = dé + modificateur de caractéristique + bonus de rang + bonus divers + effets des traits actifs + circonstance**,
+> comparé à une difficulté facultative annoncée par le MJ (réussite / échec affichés).
+
+- **Caractéristiques** : Force, Dextérité, Constitution, Intelligence, Sagesse, Charisme, Chance ;
+  score de 1 à 20, modificateur calculé (10 → +0, 14 → +2, 8 → −1).
+- **Compétences** (18 par défaut) liées à une caractéristique ; rang Formé (+2) ou Expert (+4),
+  bonus divers, favorites.
+- **Jets depuis la fiche** : un toucher sur une caractéristique ou une compétence ; avantage,
+  circonstance, difficulté ; chaque jet est enregistré dans l'historique avec le détail du calcul.
+- **Chance** : points limités (1 + modificateur de Chance), dépensés pour relancer un jet et garder
+  le meilleur. Aucune récupération automatique : elle se fait à la main, quand le MJ l'accorde.
+- **Traits** (trait, aptitude, particularité, héritage, spécialisation, capacité magique) : nom,
+  description, état (latent, éveillé, actif, maîtrisé, inactif), effets mécaniques saisis à la main
+  (actifs seulement dans certains états), utilisations limitées, historique d'évolution.
+  L'application n'invente aucun pouvoir et ne révèle rien.
+- Tout se règle en mode Préparation : **Réglages → Règles de jeu** (dé de résolution, liste des
+  caractéristiques et compétences, rangs, chance, types et états des traits). Identifiants stables :
+  renommer ne casse ni les fiches, ni l'historique, ni les sauvegardes.
+
 ## Contenus
 
 Aucune illustration n’est fournie : tant qu’un lieu n’a pas d’image, un cadre sobre « Aucune

@@ -1,5 +1,5 @@
 import { newId } from '@/domain/ids';
-import type { Campaign, Location, LocationKind, PlaceholderTheme } from '@/domain/schemas';
+import { rulesSchema, type Campaign, type Location, type LocationKind, type PlaceholderTheme } from '@/domain/schemas';
 import { db } from '@/services/db/database';
 
 /**
@@ -116,6 +116,7 @@ export async function seedDemoCampaign(): Promise<string> {
     isDemo: true,
     currentLocationId: ids.get('auberge')!,
     currentMapId: null,
+    rules: rulesSchema.parse({}),
     createdAt: now,
     updatedAt: now,
   };

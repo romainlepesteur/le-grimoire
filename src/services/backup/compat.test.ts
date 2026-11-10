@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { rulesOf } from '@/domain/schemas';
 import { db } from '@/services/db/database';
 import { getMediaBlob } from '@/services/db/media';
 import { applyBackup, readBackupFile } from './importCampaign';
@@ -22,7 +23,11 @@ describe('compatibilité des sauvegardes existantes', () => {
   ] as const) {
     it(`relit la sauvegarde ${label} exactement comme la version de référence`, async () => {
       const preview = await readBackupFile(load(file));
-      expect(JSON.parse(JSON.stringify(preview.backup))).toEqual(expected[label]);
+      const actual = JSON.parse(JSON.stringify(preview.backup));
+      // Seul ajout depuis la référence : les règles de jeu par défaut, données aux campagnes qui n'en ont pas.
+      expect(actual.campaign.rules).toEqual(rulesOf(undefined));
+      delete actual.campaign.rules;
+      expect(actual).toEqual(expected[label]);
     });
   }
 

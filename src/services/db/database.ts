@@ -78,7 +78,17 @@ export class GrimoireDB extends Dexie {
       diceRolls: 'id, campaignId, createdAt',
       settings: 'key',
     });
+
+    // Données enregistrées par une version antérieure : les champs ajoutés depuis
+    // reçoivent leur valeur par défaut à la lecture (rien n'est réécrit sur le disque).
+    this.characters.hook('reading', (c) => ({ ...CHARACTER_DEFAULTS, ...c }));
+    this.diceRolls.hook('reading', (r) => ({ ...ROLL_DEFAULTS, ...r }));
   }
 }
+
+/** Champs ajoutés aux fiches avec les règles de jeu (caractéristiques, compétences, chance, traits). */
+const CHARACTER_DEFAULTS = { abilities: {}, skills: {}, luckPoints: null, traits: [], stats: [], conditions: [] } satisfies Partial<Character>;
+/** Champs ajoutés aux lancers avec les jets de caractéristique. */
+const ROLL_DEFAULTS = { characterId: null, breakdown: [], dc: null, outcome: null, luckReroll: false } satisfies Partial<DiceRoll>;
 
 export const db = new GrimoireDB();

@@ -10,6 +10,95 @@ const id = z.string().min(1).max(64);
 const timestamp = z.number().int().nonnegative();
 
 // ---------------------------------------------------------------------------
+// Règles de la campagne : configurables, sans imposer un système complet.
+// Caractéristiques, compétences, rangs, dé de résolution, chance, traits.
+// Les identifiants sont stables : renommer « Arcanes » ne casse rien.
+// ---------------------------------------------------------------------------
+
+const ruleId = z.string().min(1).max(64);
+
+export const abilityDefSchema = z.object({ id: ruleId, name: z.string().trim().min(1).max(40), abbr: z.string().trim().min(1).max(6) });
+export type AbilityDef = z.infer<typeof abilityDefSchema>;
+
+export const skillDefSchema = z.object({ id: ruleId, name: z.string().trim().min(1).max(60), abilityId: ruleId });
+export type SkillDef = z.infer<typeof skillDefSchema>;
+
+export const traitKindDefSchema = z.object({ id: ruleId, name: z.string().trim().min(1).max(40) });
+export type TraitKindDef = z.infer<typeof traitKindDefSchema>;
+
+/** `effects` : les effets mécaniques d'un trait ne comptent que dans un état « actif ». */
+export const traitStateDefSchema = z.object({ id: ruleId, name: z.string().trim().min(1).max(40), effects: z.boolean() });
+export type TraitStateDef = z.infer<typeof traitStateDefSchema>;
+
+export const DEFAULT_ABILITIES: AbilityDef[] = [
+  { id: 'for', name: 'Force', abbr: 'FOR' },
+  { id: 'dex', name: 'Dextérité', abbr: 'DEX' },
+  { id: 'con', name: 'Constitution', abbr: 'CON' },
+  { id: 'int', name: 'Intelligence', abbr: 'INT' },
+  { id: 'sag', name: 'Sagesse', abbr: 'SAG' },
+  { id: 'cha', name: 'Charisme', abbr: 'CHA' },
+  { id: 'chance', name: 'Chance', abbr: 'CHC' },
+];
+
+export const DEFAULT_SKILLS: SkillDef[] = [
+  { id: 'athletisme', name: 'Athlétisme', abilityId: 'for' },
+  { id: 'acrobaties', name: 'Acrobaties', abilityId: 'dex' },
+  { id: 'discretion', name: 'Discrétion', abilityId: 'dex' },
+  { id: 'escamotage', name: 'Escamotage', abilityId: 'dex' },
+  { id: 'endurance', name: 'Endurance', abilityId: 'con' },
+  { id: 'arcanes', name: 'Arcanes', abilityId: 'int' },
+  { id: 'histoire', name: 'Histoire', abilityId: 'int' },
+  { id: 'investigation', name: 'Investigation', abilityId: 'int' },
+  { id: 'nature', name: 'Nature', abilityId: 'int' },
+  { id: 'perception', name: 'Perception', abilityId: 'sag' },
+  { id: 'perspicacite', name: 'Perspicacité', abilityId: 'sag' },
+  { id: 'survie', name: 'Survie', abilityId: 'sag' },
+  { id: 'medecine', name: 'Médecine', abilityId: 'sag' },
+  { id: 'dressage', name: 'Dressage', abilityId: 'sag' },
+  { id: 'persuasion', name: 'Persuasion', abilityId: 'cha' },
+  { id: 'tromperie', name: 'Tromperie', abilityId: 'cha' },
+  { id: 'intimidation', name: 'Intimidation', abilityId: 'cha' },
+  { id: 'representation', name: 'Représentation', abilityId: 'cha' },
+];
+
+export const DEFAULT_TRAIT_KINDS: TraitKindDef[] = [
+  { id: 'trait', name: 'Trait' },
+  { id: 'aptitude', name: 'Aptitude' },
+  { id: 'particularite', name: 'Particularité' },
+  { id: 'heritage', name: 'Héritage' },
+  { id: 'specialisation', name: 'Spécialisation' },
+  { id: 'magie', name: 'Capacité magique' },
+];
+
+export const DEFAULT_TRAIT_STATES: TraitStateDef[] = [
+  { id: 'latent', name: 'Latent', effects: false },
+  { id: 'eveille', name: 'Éveillé', effects: false },
+  { id: 'actif', name: 'Actif', effects: true },
+  { id: 'maitrise', name: 'Maîtrisé', effects: true },
+  { id: 'inactif', name: 'Inactif', effects: false },
+];
+
+export const rulesSchema = z.object({
+  /** Dé de résolution des jets (1d20 par défaut). */
+  die: z.object({ count: z.number().int().min(1).max(5), sides: z.number().int().min(2).max(100) }).default({ count: 1, sides: 20 }),
+  abilities: z.array(abilityDefSchema).min(1).max(20).default(DEFAULT_ABILITIES),
+  skills: z.array(skillDefSchema).max(80).default(DEFAULT_SKILLS),
+  /** Bonus des rangs de compétence : formé, expert. */
+  rankBonus: z.tuple([z.number().int().min(-20).max(20), z.number().int().min(-20).max(20)]).default([2, 4]),
+  /** Points de chance : maximum = 1 + modificateur de la caractéristique choisie (au moins 1). */
+  luck: z.object({ enabled: z.boolean(), abilityId: ruleId }).default({ enabled: true, abilityId: 'chance' }),
+  traitKinds: z.array(traitKindDefSchema).min(1).max(30).default(DEFAULT_TRAIT_KINDS),
+  traitStates: z.array(traitStateDefSchema).min(1).max(20).default(DEFAULT_TRAIT_STATES),
+});
+export type Rules = z.infer<typeof rulesSchema>;
+
+/** Règles d'une campagne, avec les valeurs par défaut si elle n'en a pas encore (anciennes données). */
+export function rulesOf(campaign: { rules?: unknown } | undefined): Rules {
+  const parsed = rulesSchema.safeParse(campaign?.rules ?? {});
+  return parsed.success ? parsed.data : rulesSchema.parse({});
+}
+
+// ---------------------------------------------------------------------------
 // Campagne
 // ---------------------------------------------------------------------------
 
@@ -23,6 +112,8 @@ export const campaignSchema = z.object({
   currentLocationId: id.nullable().default(null),
   /** Carte affichée sur l'écran Carte. */
   currentMapId: id.nullable().default(null),
+  /** Règles de jeu (caractéristiques, compétences, chance, traits). */
+  rules: rulesSchema.default(() => rulesSchema.parse({})),
   createdAt: timestamp,
   updatedAt: timestamp,
 });
@@ -244,6 +335,41 @@ export const statSchema = z.object({
 });
 export type Stat = z.infer<typeof statSchema>;
 
+/**
+ * Trait, aptitude, particularité, héritage, spécialisation, capacité magique…
+ * Tout est saisi à la main : l'application n'invente aucun pouvoir et ne révèle rien.
+ * Les effets mécaniques ne s'appliquent que si l'état du trait les autorise (Actif, Maîtrisé).
+ */
+export const TRAIT_EFFECT_TARGETS = ['ability', 'skill', 'all_checks', 'luck_max'] as const;
+export type TraitEffectTarget = (typeof TRAIT_EFFECT_TARGETS)[number];
+
+export const traitEffectSchema = z.object({
+  id,
+  target: z.enum(TRAIT_EFFECT_TARGETS),
+  /** Caractéristique ou compétence visée (pour `ability` et `skill`). */
+  targetId: z.string().max(64).nullable().default(null),
+  value: z.number().int().min(-50).max(50),
+});
+export type TraitEffect = z.infer<typeof traitEffectSchema>;
+
+export const traitSchema = z.object({
+  id,
+  name: z.string().trim().min(1).max(120),
+  kindId: z.string().max(64).default('trait'),
+  stateId: z.string().max(64).default('actif'),
+  description: z.string().max(10000).default(''),
+  effects: z.array(traitEffectSchema).max(20).default([]),
+  /** Utilisations limitées (une aptitude « 2 fois par jour »…), facultatif. */
+  uses: z.object({ current: z.number().int().min(0).max(999), max: z.number().int().min(1).max(999) }).nullable().default(null),
+  /** Évolution : chaque changement d'état est noté, avec une remarque facultative. */
+  history: z
+    .array(z.object({ at: timestamp, stateId: z.string().max(64), note: z.string().max(500).default('') }))
+    .max(100)
+    .default([]),
+  createdAt: timestamp,
+});
+export type Trait = z.infer<typeof traitSchema>;
+
 export const characterSchema = z.object({
   id,
   campaignId: id,
@@ -268,6 +394,22 @@ export const characterSchema = z.object({
   status: z.enum(COMPANION_STATUSES).default('present'),
   relation: z.string().max(300).default(''),
   notes: z.string().max(20000).default(''),
+  /** Scores des caractéristiques (1 à 20 ; absent = 10). */
+  abilities: z.record(z.string().max(64), z.number().int().min(1).max(30)).default({}),
+  /** Compétences : rang (0 non formé, 1 formé, 2 expert), bonus divers, favorite. */
+  skills: z
+    .record(
+      z.string().max(64),
+      z.object({
+        rank: z.number().int().min(0).max(2).default(0),
+        bonus: z.number().int().min(-50).max(50).default(0),
+        favorite: z.boolean().default(false),
+      }),
+    )
+    .default({}),
+  /** Points de chance restants ; leur récupération est toujours manuelle (accordée par le MJ). */
+  luckPoints: z.number().int().min(0).max(99).nullable().default(null),
+  traits: z.array(traitSchema).max(100).default([]),
   sortOrder: z.number().default(0),
   createdAt: timestamp,
   updatedAt: timestamp,
@@ -386,6 +528,14 @@ export const diceRollSchema = z.object({
   modifier: z.number().int().default(0),
   total: z.number().int(),
   mode: z.enum(ROLL_MODES).default('normal'),
+  /** Jet de caractéristique ou de compétence : qui, et le détail des bonus. */
+  characterId: id.nullable().default(null),
+  breakdown: z.array(z.object({ label: z.string().max(80), value: z.number().int() })).max(30).default([]),
+  /** Difficulté annoncée par le MJ, et verdict. */
+  dc: z.number().int().min(-100).max(1000).nullable().default(null),
+  outcome: z.enum(['reussite', 'echec']).nullable().default(null),
+  /** Relance obtenue en dépensant un point de chance (meilleur des deux jets). */
+  luckReroll: z.boolean().default(false),
   createdAt: timestamp,
 });
 export type DiceRoll = z.infer<typeof diceRollSchema>;

@@ -1,5 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import type { Character, DiceRoll, Item, JournalEntry } from '@/domain/schemas';
+import { useMemo } from 'react';
+import { rulesOf, type Character, type DiceRoll, type Item, type JournalEntry, type Rules } from '@/domain/schemas';
+import { useActiveCampaign } from '@/hooks/data';
 import { db } from '@/services/db/database';
 
 /** Accès en direct aux données de partie de la campagne. */
@@ -37,3 +39,9 @@ export const findPj = (list: Character[] | undefined) => list?.find((c) => c.kin
 
 export const ownerLabel = (ownerId: string | null, characters: Character[] | undefined) =>
   ownerId ? (characters?.find((c) => c.id === ownerId)?.name ?? 'Porteur inconnu') : 'Sac commun';
+
+/** Règles de jeu de la campagne active (valeurs par défaut si elle n'en a pas encore). */
+export function useRules(): Rules {
+  const campaign = useActiveCampaign();
+  return useMemo(() => rulesOf(campaign), [campaign]);
+}

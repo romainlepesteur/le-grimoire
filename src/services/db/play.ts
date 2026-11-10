@@ -2,16 +2,21 @@ import { db } from './database';
 import { newId } from '@/domain/ids';
 import { guessCategory, parseItemInput } from '@/domain/quickEntry';
 import type { RollResult } from '@/domain/dice';
+import { luckCurrent, luckMax, type CheckResult } from '@/domain/checks';
 import {
   characterSchema,
   diceRollSchema,
   itemSchema,
   journalEntrySchema,
+  rulesSchema,
+  traitSchema,
   type Character,
   type CharacterKind,
   type DiceRoll,
   type Item,
   type JournalEntry,
+  type Rules,
+  type Trait,
 } from '@/domain/schemas';
 import { deleteMediaIfUnused } from './media';
 
@@ -244,8 +249,13 @@ export async function deleteJournalEntry(id: string): Promise<JournalEntry | und
 export const DICE_HISTORY_LIMIT = 500;
 
 /** Enregistre le lancer AVANT tout affichage : le résultat montré est celui conservé. */
-export async function recordRoll(campaignId: string, result: RollResult, label = ''): Promise<DiceRoll> {
-  const row = diceRollSchema.parse({ id: newId('roll'), campaignId, label: label.trim().slice(0, 200), ...result, createdAt: Date.now() });
+export async function recordRoll(
+  campaignId: string,
+  result: RollResult | CheckResult,
+  label = '',
+  characterId: string | null = null,
+): Promise<DiceRoll> {
+  const row = diceRollSchema.parse({ id: newId('roll'), campaignId, label: label.trim().slice(0, 200), ...result, characterId, createdAt: Date.now() });
   await db.transaction('rw', db.diceRolls, async () => {
     await db.diceRolls.add(row);
     const all = await db.diceRolls.where('campaignId').equals(campaignId).sortBy('createdAt');
@@ -256,4 +266,93 @@ export async function recordRoll(campaignId: string, result: RollResult, label =
 
 export async function clearDiceHistory(campaignId: string): Promise<void> {
   await db.diceRolls.where('campaignId').equals(campaignId).delete();
+}
+
+// ---------------------------------------------------------------------------
+// Chance : points limités. Aucune récupération automatique : c'est le MJ qui l'accorde.
+// ---------------------------------------------------------------------------
+
+export async function spendLuck(characterId: string, rules: Rules): Promise<number | undefined> {
+  const c = await db.characters.get(characterId);
+  if (!c) return undefined;
+  const current = luckCurrent(c, rules);
+  if (current <= 0) throw new Error('Plus aucun point de chance.');
+  await patchCharacter(characterId, { luckPoints: current - 1 });
+  return current - 1;
+}
+
+/** Récupération accordée par le MJ (« reprends un point de chance »). */
+export async function recoverLuck(characterId: string, amount: number, rules: Rules): Promise<number | undefined> {
+  const c = await db.characters.get(characterId);
+  if (!c) return undefined;
+  const next = Math.min(luckMax(c, rules), luckCurrent(c, rules) + Math.max(0, Math.round(amount)));
+  await patchCharacter(characterId, { luckPoints: next });
+  return next;
+}
+
+// ---------------------------------------------------------------------------
+// Traits, aptitudes, particularités : saisis à la main, jamais générés.
+// ---------------------------------------------------------------------------
+
+/** Brouillon de trait (validé à l'enregistrement, quand il a un nom). */
+export function newTrait(partial: Partial<Trait>): Trait {
+  return {
+    id: newId('trait'),
+    name: '',
+    kindId: 'trait',
+    stateId: 'actif',
+    description: '',
+    effects: [],
+    uses: null,
+    history: [],
+    createdAt: Date.now(),
+    ...partial,
+  };
+}
+
+export async function saveTrait(characterId: string, trait: Trait): Promise<void> {
+  const c = await db.characters.get(characterId);
+  if (!c) return;
+  const exists = c.traits.some((t) => t.id === trait.id);
+  const clean = traitSchema.parse(trait);
+  await patchCharacter(characterId, { traits: exists ? c.traits.map((t) => (t.id === trait.id ? clean : t)) : [...c.traits, clean] });
+}
+
+/** Change l'état d'un trait (latent → éveillé…) et garde la trace de cette évolution. */
+export async function setTraitState(characterId: string, traitId: string, stateId: string, note = ''): Promise<void> {
+  const c = await db.characters.get(characterId);
+  const t = c?.traits.find((x) => x.id === traitId);
+  if (!c || !t || t.stateId === stateId) return;
+  const history = [...t.history, { at: Date.now(), stateId, note: note.trim().slice(0, 500) }].slice(-100);
+  await saveTrait(characterId, { ...t, stateId, history });
+}
+
+export async function adjustTraitUses(characterId: string, traitId: string, delta: number): Promise<void> {
+  const c = await db.characters.get(characterId);
+  const t = c?.traits.find((x) => x.id === traitId);
+  if (!c || !t?.uses) return;
+  const current = Math.max(0, Math.min(t.uses.max, t.uses.current + delta));
+  await saveTrait(characterId, { ...t, uses: { ...t.uses, current } });
+}
+
+export async function deleteTrait(characterId: string, traitId: string): Promise<Trait | undefined> {
+  const c = await db.characters.get(characterId);
+  const t = c?.traits.find((x) => x.id === traitId);
+  if (!c || !t) return undefined;
+  await patchCharacter(characterId, { traits: c.traits.filter((x) => x.id !== traitId) });
+  return t;
+}
+
+// ---------------------------------------------------------------------------
+// Règles de la campagne (mode Préparation)
+// ---------------------------------------------------------------------------
+
+export async function saveRules(campaignId: string, rules: Rules): Promise<Rules> {
+  const clean = rulesSchema.parse(rules);
+  // Une compétence doit toujours pointer vers une caractéristique existante.
+  const abilityIds = new Set(clean.abilities.map((a) => a.id));
+  if (clean.skills.some((s) => !abilityIds.has(s.abilityId))) throw new Error('Une compétence est liée à une caractéristique supprimée.');
+  if (new Set(clean.abilities.map((a) => a.id)).size !== clean.abilities.length) throw new Error('Deux caractéristiques ont le même identifiant.');
+  await db.campaigns.update(campaignId, { rules: clean, updatedAt: Date.now() });
+  return clean;
 }

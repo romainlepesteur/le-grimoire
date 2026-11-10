@@ -19,6 +19,8 @@ import { Button } from '@/ui/Button';
 import { Panel, SectionTitle } from '@/ui/Panel';
 import { cn } from '@/ui/cn';
 import { BackupSection } from './BackupSection';
+import { RulesEditor, rulesSummary } from './RulesEditor';
+import { rulesOf } from '@/domain/schemas';
 
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
@@ -96,6 +98,31 @@ function CampaignSection() {
           {new Date(campaign.createdAt).toLocaleDateString('fr-FR', { dateStyle: 'long' })}
         </p>
       )}
+    </Panel>
+  );
+}
+
+/** Règles de jeu : résumé en mode Jeu, modification en Préparation. */
+function RulesSection() {
+  const campaign = useActiveCampaign();
+  const isPrep = useIsPrep();
+  const [open, setOpen] = useState(false);
+  if (!campaign) return null;
+  const rules = rulesOf(campaign);
+  return (
+    <Panel className="px-6 py-5">
+      <div className="flex items-center justify-between gap-3">
+        <SectionTitle className="text-bronze-700">Règles de jeu</SectionTitle>
+        {isPrep ? (
+          <Button variant="ink" size="sm" onClick={() => setOpen(true)}>
+            Modifier
+          </Button>
+        ) : (
+          <span className="text-sm italic text-ink-500">Modifiables en Préparation</span>
+        )}
+      </div>
+      <p className="mt-2 text-base text-ink-700">{rulesSummary(rules)}</p>
+      <RulesEditor open={open} onClose={() => setOpen(false)} campaignId={campaign.id} rules={rules} />
     </Panel>
   );
 }
@@ -218,6 +245,7 @@ export function SettingsPage() {
       >
         <motion.div variants={RISE} transition={{ duration: 0.5, ease: EASE_OUT }} className="space-y-4">
           <CampaignSection />
+          <RulesSection />
           {campaign && <BackupSection campaign={campaign} />}
         </motion.div>
         <motion.div variants={RISE} transition={{ duration: 0.5, ease: EASE_OUT }} className="space-y-4">

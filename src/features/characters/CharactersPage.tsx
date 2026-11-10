@@ -12,7 +12,9 @@ import { ConfirmDialog } from '@/ui/Dialog';
 import { Divider, Panel, SectionTitle } from '@/ui/Panel';
 import { EASE_OUT } from '@/ui/motion';
 import { cn } from '@/ui/cn';
-import { findPj, useCharacters, useItems } from '@/features/play/hooks';
+import { findPj, useCharacters, useItems, useRules } from '@/features/play/hooks';
+import { AbilityMedallions, LuckBlock, SkillList } from './rpg';
+import { TraitsSection } from './traits';
 import { HpControl } from './HpControl';
 import { AutoNotes, Coins, Conditions, inputClass, Label, NumberField, Portrait, Stats } from './parts';
 
@@ -58,8 +60,48 @@ function useDelete() {
 }
 
 /** Fiche du personnage joueur, sur parchemin. */
+type SheetTab = 'carac' | 'competences' | 'traits' | 'bourse';
+
+/** Onglets de la fiche : moins de défilement sur tablette. */
+function SheetTabs({ value, onChange, light, compact }: { value: SheetTab; onChange: (t: SheetTab) => void; light?: boolean; compact?: boolean }) {
+  const tabs: { v: SheetTab; label: string }[] = [
+    { v: 'carac', label: compact ? 'Carac.' : 'Caractéristiques' },
+    { v: 'competences', label: 'Compétences' },
+    { v: 'traits', label: 'Traits' },
+    { v: 'bourse', label: compact ? 'Notes' : 'Bourse, notes' },
+  ];
+  return (
+    <div role="tablist" className={cn('mt-4 flex gap-1 border-b', light ? 'border-ink-700/20' : 'border-bronze-500/25')}>
+      {tabs.map((t) => (
+        <button
+          key={t.v}
+          type="button"
+          role="tab"
+          aria-selected={value === t.v}
+          onClick={() => onChange(t.v)}
+          className={cn(
+            'relative h-11 flex-1 truncate whitespace-nowrap px-1.5 font-display text-[0.72rem] font-semibold uppercase tracking-[0.08em] transition-colors',
+            value === t.v ? (light ? 'text-ink-900' : 'text-gold-200') : light ? 'text-ink-500 hover:text-ink-700' : 'text-parchment-400 hover:text-parchment-200',
+          )}
+        >
+          {t.label}
+          {value === t.v && (
+            <motion.span
+              layoutId={`sheet-tab-${light ? 'l' : 'd'}`}
+              className={cn('absolute inset-x-2 -bottom-px h-0.5 rounded-full', light ? 'bg-bronze-600' : 'bg-gold-300')}
+              transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+            />
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function PlayerSheet({ pj, itemCount, onDelete }: { pj: Character; itemCount: number; onDelete: () => void }) {
   const [editing, setEditing] = useState(false);
+  const [tab, setTab] = useState<SheetTab>('carac');
+  const rules = useRules();
   const navigate = useNavigate();
   return (
     <Panel ornate className="px-6 pt-6 pb-5">
@@ -105,28 +147,58 @@ function PlayerSheet({ pj, itemCount, onDelete }: { pj: Character; itemCount: nu
         <Conditions character={pj} light />
       </section>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-[1fr_auto]">
-        <section>
-          <Label light>Caractéristiques</Label>
-          <Stats character={pj} editing={editing} light />
-        </section>
-        <section className="md:w-64">
-          <Label light>Bourse</Label>
-          <Coins character={pj} light />
-          <button
-            type="button"
-            onClick={() => navigate('/inventaire')}
-            className="mt-3 flex h-11 w-full items-center gap-2 rounded-md border border-ink-700/25 px-3 text-base text-ink-700 transition-colors hover:bg-ink-900/5"
-          >
-            <Backpack className="size-5 text-bronze-700" /> {itemCount} objet{itemCount > 1 ? 's' : ''} porté{itemCount > 1 ? 's' : ''}
-          </button>
-        </section>
-      </div>
+      <SheetTabs value={tab} onChange={setTab} light />
 
-      <section className="mt-4">
-        <Label light>Notes</Label>
-        <AutoNotes character={pj} light rows={5} />
-      </section>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={tab}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.22, ease: EASE_OUT }}
+          className="mt-3"
+        >
+          {tab === 'carac' && (
+            <div className="space-y-4">
+              <AbilityMedallions character={pj} rules={rules} editing={editing} light />
+              <p className="-mt-1 text-center text-sm text-ink-500">Touchez une caractéristique pour faire un jet.</p>
+              {rules.luck.enabled && (
+                <section>
+                  <Label light>Chance</Label>
+                  <LuckBlock character={pj} rules={rules} light />
+                </section>
+              )}
+              {(pj.stats.length > 0 || editing) && (
+                <section>
+                  <Label light>Autres valeurs (niveau, défense, vitesse…)</Label>
+                  <Stats character={pj} editing={editing} light />
+                </section>
+              )}
+            </div>
+          )}
+          {tab === 'competences' && <SkillList character={pj} rules={rules} editing={editing} light />}
+          {tab === 'traits' && <TraitsSection character={pj} rules={rules} light />}
+          {tab === 'bourse' && (
+            <div className="space-y-4">
+              <section>
+                <Label light>Bourse</Label>
+                <Coins character={pj} light />
+                <button
+                  type="button"
+                  onClick={() => navigate('/inventaire')}
+                  className="mt-3 flex h-11 w-full items-center gap-2 rounded-md border border-ink-700/25 px-3 text-base text-ink-700 transition-colors hover:bg-ink-900/5"
+                >
+                  <Backpack className="size-5 text-bronze-700" /> {itemCount} objet{itemCount > 1 ? 's' : ''} porté{itemCount > 1 ? 's' : ''}
+                </button>
+              </section>
+              <section>
+                <Label light>Notes</Label>
+                <AutoNotes character={pj} light rows={6} />
+              </section>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
 
       <AnimatePresence>
         {editing && (
@@ -149,6 +221,8 @@ const STATUS_TONE = { present: 'forest', blesse: 'bronze', parti: 'muted', mort:
 function CompanionCard({ c, itemCount, onDelete, index }: { c: Character; itemCount: number; onDelete: () => void; index: number }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [tab, setTab] = useState<SheetTab>('carac');
+  const rules = useRules();
   return (
     <motion.li variants={RISE} transition={{ duration: 0.4, delay: index * 0.04, ease: EASE_OUT }} layout>
       <Panel tone="leather" className={cn('px-4 py-3', (c.status === 'mort' || c.status === 'parti') && 'opacity-75')}>
@@ -210,10 +284,26 @@ function CompanionCard({ c, itemCount, onDelete, index }: { c: Character; itemCo
                     </label>
                   </div>
                 )}
-                <Stats character={c} editing={editing} />
+                <SheetTabs value={tab} onChange={setTab} compact />
                 <div>
-                  <Label>Événements connus, notes</Label>
-                  <AutoNotes character={c} rows={3} />
+                  {tab === 'carac' && (
+                    <div className="space-y-3">
+                      <AbilityMedallions character={c} rules={rules} editing={editing} compact />
+                      {rules.luck.enabled && <LuckBlock character={c} rules={rules} />}
+                      {(c.stats.length > 0 || editing) && <Stats character={c} editing={editing} />}
+                    </div>
+                  )}
+                  {tab === 'competences' && <SkillList character={c} rules={rules} editing={editing} onlyRelevant />}
+                  {tab === 'traits' && <TraitsSection character={c} rules={rules} />}
+                  {tab === 'bourse' && (
+                    <div className="space-y-3">
+                      <Coins character={c} />
+                      <div>
+                        <Label>Événements connus, notes</Label>
+                        <AutoNotes character={c} rows={3} />
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="flex-1 text-sm text-parchment-400">

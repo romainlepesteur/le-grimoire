@@ -10,11 +10,13 @@ import { useWakeLock } from '@/hooks/device';
 import { updateSettings } from '@/services/db/settings';
 import { useSession } from '@/stores/session';
 import { Toaster } from '@/ui/Toaster';
+import { ErrorBoundary } from '@/ui/ErrorBoundary';
 import { Button } from '@/ui/Button';
 import { ConfirmDialog, Dialog } from '@/ui/Dialog';
 import { Sheet } from '@/ui/Sheet';
 import { DicePanel } from '@/features/dice/DicePanel';
 import { QuickCapture } from '@/features/quick/QuickCapture';
+import { CheckDialog } from '@/features/characters/CheckDialog';
 import { MixerSheet } from '@/features/audio/MixerSheet';
 import { useAmbianceDirector } from '@/features/audio/useAmbianceDirector';
 
@@ -99,7 +101,7 @@ export function AppShell() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2, ease: EASE_OUT }}
             >
-              {outlet}
+              <ErrorBoundary key={location.pathname}>{outlet}</ErrorBoundary>
             </motion.div>
           </AnimatePresence>
         </main>
@@ -110,6 +112,7 @@ export function AppShell() {
         <DicePanel />
       </Sheet>
       <QuickCapture />
+      <CheckDialog />
 
       <MixerSheet />
 
