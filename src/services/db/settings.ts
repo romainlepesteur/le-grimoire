@@ -9,10 +9,13 @@ export interface AppSettings {
   lastExportAt: number | null;
   /** L'avertissement « le navigateur n'est pas une sauvegarde » a été lu. */
   storageNoticeSeen: boolean;
+  /** Effets d'ambiance sur les illustrations (poussières, lent mouvement de caméra). */
+  ambientEffects: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   activeCampaignId: null,
+  ambientEffects: true,
   wakeLock: true,
   lastExportAt: null,
   storageNoticeSeen: false,

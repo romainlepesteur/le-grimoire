@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { HardDrive, RefreshCw } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { motion } from 'motion/react';
+import { EASE_OUT } from '@/ui/motion';
+
+const RISE = { hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } };
 import { useActiveCampaign, useSettings } from '@/hooks/data';
 import { useFullscreen } from '@/hooks/device';
 import { renameCampaign } from '@/services/db/campaigns';
@@ -26,8 +30,13 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
       className="flex min-h-12 w-full items-center justify-between gap-4 text-left text-lg text-ink-900"
     >
       <span>{label}</span>
-      <span className={cn('relative h-8 w-14 shrink-0 rounded-full border transition-colors', checked ? 'border-bronze-600 bg-bronze-500' : 'border-ink-700/30 bg-ink-900/10')}>
-        <span className={cn('absolute top-1 size-6 rounded-full bg-parchment-50 shadow transition-all', checked ? 'left-7' : 'left-1')} />
+      <span
+        className={cn(
+          'flex h-8 w-14 shrink-0 items-center rounded-full border p-1 transition-colors duration-300',
+          checked ? 'justify-end border-bronze-600 bg-bronze-500' : 'justify-start border-ink-700/30 bg-ink-900/10',
+        )}
+      >
+        <motion.span layout transition={{ type: 'spring', stiffness: 600, damping: 32 }} className="size-6 rounded-full bg-parchment-50 shadow" />
       </span>
     </button>
   );
@@ -182,6 +191,11 @@ function AppSection() {
       )}
       <div className="mt-3 divide-y divide-ink-700/10">
         <Toggle
+          label="Effets d’ambiance sur les illustrations (poussières, mouvement lent)"
+          checked={settings.ambientEffects}
+          onChange={(v) => void updateSettings({ ambientEffects: v })}
+        />
+        <Toggle
           label={wakeSupported ? 'Garder l’écran allumé pendant l’utilisation' : 'Garder l’écran allumé (non pris en charge ici)'}
           checked={settings.wakeLock}
           onChange={(v) => void updateSettings({ wakeLock: v })}
@@ -196,12 +210,17 @@ export function SettingsPage() {
   const campaign = useActiveCampaign();
   return (
     <div className="h-full overflow-y-auto scrollbar-thin">
-      <div className="mx-auto grid max-w-6xl gap-4 p-4 lg:grid-cols-2 lg:p-6">
-        <div className="space-y-4">
+      <motion.div
+        className="mx-auto grid max-w-6xl gap-4 p-4 lg:grid-cols-2 lg:p-6"
+        initial="hidden"
+        animate="show"
+        variants={{ hidden: {}, show: { transition: { staggerChildren: 0.08 } } }}
+      >
+        <motion.div variants={RISE} transition={{ duration: 0.5, ease: EASE_OUT }} className="space-y-4">
           <CampaignSection />
           {campaign && <BackupSection campaign={campaign} />}
-        </div>
-        <div className="space-y-4">
+        </motion.div>
+        <motion.div variants={RISE} transition={{ duration: 0.5, ease: EASE_OUT }} className="space-y-4">
           <StorageSection />
           <AppSection />
           <Panel tone="leather" className="px-6 py-5">
@@ -215,8 +234,8 @@ export function SettingsPage() {
               carte. Bouton en bas de la barre de gauche.
             </p>
           </Panel>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

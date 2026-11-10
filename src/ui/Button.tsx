@@ -7,7 +7,7 @@ type Size = 'sm' | 'md' | 'lg';
 const VARIANTS: Record<Variant, string> = {
   // Bronze doré : action principale
   primary:
-    'bg-gradient-to-b from-gold-300 to-bronze-500 text-leather-950 border border-gold-200/60 shadow-[0_2px_0_rgb(0_0_0/0.4),inset_0_1px_0_rgb(255_255_255/0.35)] hover:from-gold-200 hover:to-bronze-400',
+    'sheen bg-gradient-to-b from-gold-300 to-bronze-500 text-leather-950 border border-gold-200/60 shadow-[0_2px_0_rgb(0_0_0/0.4),inset_0_1px_0_rgb(255_255_255/0.35)] hover:from-gold-200 hover:to-bronze-400',
   // Cuir avec liseré : action secondaire sur fond sombre
   secondary:
     'bg-leather-800/80 text-parchment-100 border border-bronze-500/60 hover:bg-leather-700 hover:border-bronze-400',
@@ -34,8 +34,9 @@ export function Button({ variant = 'secondary', size = 'md', icon, className, ch
     <button
       type="button"
       className={cn(
-        'inline-flex items-center justify-center rounded-md font-serif font-medium transition-colors duration-150 select-none',
-        'active:translate-y-px disabled:opacity-45 disabled:pointer-events-none',
+        'inline-flex items-center justify-center rounded-md font-serif font-medium select-none',
+        'transition-[color,background-color,border-color,transform,box-shadow] duration-200 ease-out',
+        'active:scale-[0.97] active:duration-75 disabled:opacity-45 disabled:pointer-events-none',
         VARIANTS[variant],
         SIZES[size],
         className,
@@ -63,7 +64,7 @@ export function IconButton({ label, active, tone = 'dark', size = 'md', classNam
       aria-label={label}
       title={label}
       className={cn(
-        'inline-flex items-center justify-center rounded-full transition-colors duration-150 active:scale-95',
+        'inline-flex items-center justify-center rounded-full transition-[color,background-color,transform] duration-200 active:scale-90 active:duration-75',
         size === 'md' ? 'size-12' : 'size-14',
         tone === 'dark'
           ? active

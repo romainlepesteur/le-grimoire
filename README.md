@@ -72,5 +72,10 @@ les données de Chrome supprime la campagne. Exportez régulièrement et gardez 
 
 ## Contenus
 
-Les illustrations actuelles sont **provisoires** (paysages vectoriels générés) et signalées comme
-telles. Aucune musique n’est fournie : vous importerez vos propres fichiers (phase 2).
+Aucune illustration n’est fournie : tant qu’un lieu n’a pas d’image, un cadre sobre « Aucune
+illustration » s’affiche. Le guide [docs/illustrations.md](docs/illustrations.md) donne une charte
+visuelle commune et des prompts prêts à l’emploi pour générer des images réalistes et cohérentes.
+Aucune musique n’est fournie : vous importerez vos propres fichiers (phase 2).
+
+Les animations (fondus, tiroirs, poussières en suspension) se coupent automatiquement si l’appareil
+est réglé sur « réduire les animations » ; les effets d’ambiance sont désactivables dans Réglages.

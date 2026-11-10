@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { HashRouter, Route, Routes } from 'react-router';
+import { MotionConfig } from 'motion/react';
 import { AppShell } from './AppShell';
 import { bootstrap } from './bootstrap';
 import { useSession } from '@/stores/session';
@@ -22,7 +23,7 @@ function Splash({ error }: { error?: string }) {
         </Panel>
       ) : (
         <div className="flex flex-col items-center gap-4 animate-fade-in">
-          <img src="./icons/favicon.svg" alt="" className="size-20 animate-pulse" />
+          <img src="./icons/favicon.svg" alt="" className="size-20 animate-compass-in" />
           <p className="font-display text-lg tracking-[0.2em] text-parchment-300">Ouverture du grimoire…</p>
         </div>
       )}
@@ -46,6 +47,8 @@ export function App() {
   if (!state.ready) return <Splash error={state.error} />;
 
   return (
+    // reducedMotion="user" : si Android est réglé sur « réduire les animations », Motion les coupe.
+    <MotionConfig reducedMotion="user">
     <HashRouter>
       <Routes>
         <Route element={<AppShell />}>
@@ -59,5 +62,6 @@ export function App() {
         </Route>
       </Routes>
     </HashRouter>
+    </MotionConfig>
   );
 }

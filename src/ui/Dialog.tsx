@@ -1,7 +1,9 @@
 import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'motion/react';
 import { Button } from './Button';
 import { Panel } from './Panel';
+import { EASE_OUT } from './motion';
 
 export interface DialogProps {
   open: boolean;
@@ -19,16 +21,34 @@ export function Dialog({ open, onClose, title, children, actions }: DialogProps)
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
-  if (!open) return null;
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="alertdialog" aria-modal="true">
-      <div className="absolute inset-0 animate-fade-in bg-leather-950/70 backdrop-blur-[2px]" onClick={onClose} />
-      <Panel ornate className="relative w-full max-w-lg animate-pop-in px-7 pt-7 pb-5">
-        <h2 className="font-display text-xl font-semibold tracking-wide text-ink-900">{title}</h2>
-        <div className="mt-3 text-lg text-ink-700">{children}</div>
-        <div className="mt-6 flex flex-wrap justify-end gap-3">{actions}</div>
-      </Panel>
-    </div>,
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="alertdialog" aria-modal="true">
+          <motion.div
+            className="absolute inset-0 bg-leather-950/70 backdrop-blur-[2px]"
+            onClick={onClose}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+          />
+          <motion.div
+            className="relative w-full max-w-lg"
+            initial={{ opacity: 0, scale: 0.94, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.97, y: 6, transition: { duration: 0.18 } }}
+            transition={{ duration: 0.4, ease: EASE_OUT }}
+          >
+            <Panel ornate className="px-7 pt-7 pb-5">
+              <h2 className="font-display text-xl font-semibold tracking-wide text-ink-900">{title}</h2>
+              <div className="mt-3 text-lg text-ink-700">{children}</div>
+              <div className="mt-6 flex flex-wrap justify-end gap-3">{actions}</div>
+            </Panel>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>,
     document.body,
   );
 }

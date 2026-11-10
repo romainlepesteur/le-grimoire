@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { motion } from 'motion/react';
 import { ChevronRight, Clock, MapPin, Navigation, Star } from 'lucide-react';
+import { EASE_OUT } from '@/ui/motion';
 import type { Location } from '@/domain/schemas';
 import { LOCATION_KIND_LABELS } from '@/domain/schemas';
 import { useCampaignLocations } from '@/hooks/data';
@@ -11,6 +13,10 @@ import { Sheet } from '@/ui/Sheet';
 import { cn } from '@/ui/cn';
 
 type Tab = 'parcourir' | 'favoris' | 'recents';
+
+/** Les lignes d'une colonne apparaissent en cascade. */
+const LIST = { hidden: {}, show: { transition: { staggerChildren: 0.035, delayChildren: 0.05 } } };
+const ROW = { hidden: { opacity: 0, x: -10 }, show: { opacity: 1, x: 0 } };
 
 interface Props {
   open: boolean;
@@ -82,12 +88,12 @@ export function LocationPicker({ open, onClose, campaignId, currentPath }: Props
     const isCurrent = l.id === currentId;
     const openable = hasChildren && opts.onOpen;
     return (
-      <li key={l.id} className="flex items-stretch gap-1.5">
+      <motion.li key={l.id} variants={ROW} transition={{ duration: 0.3, ease: EASE_OUT }} className="flex items-stretch gap-1.5">
         <button
           type="button"
           onClick={() => (openable ? opts.onOpen!() : void go(l))}
           className={cn(
-            'flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors',
+            'flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-lg border px-3 py-2 text-left transition-[color,background-color,border-color,transform] duration-200 active:scale-[0.98]',
             opts.selected
               ? 'border-gold-300/60 bg-gold-300/12 text-gold-200'
               : 'border-transparent text-parchment-100 hover:border-bronze-500/30 hover:bg-parchment-100/5',
@@ -124,16 +130,28 @@ export function LocationPicker({ open, onClose, campaignId, currentPath }: Props
             <Navigation className="size-5" />
           </button>
         )}
-      </li>
+      </motion.li>
     );
   };
 
   const column = (title: string, items: Location[], render: (l: Location) => React.ReactNode, empty: string) => (
     <section className="flex min-h-0 flex-col">
       <h3 className="px-2 pb-2 font-display text-xs font-semibold uppercase tracking-[0.18em] text-bronze-400">{title}</h3>
-      <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1 scrollbar-thin">
-        {items.length ? items.map(render) : <li className="px-2 py-3 text-base italic text-parchment-400">{empty}</li>}
-      </ul>
+      <motion.ul
+        key={items.map((i) => i.id).join(',') || empty}
+        variants={LIST}
+        initial="hidden"
+        animate="show"
+        className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1 scrollbar-thin"
+      >
+        {items.length ? (
+          items.map(render)
+        ) : (
+          <motion.li variants={ROW} className="px-2 py-3 text-base italic text-parchment-400">
+            {empty}
+          </motion.li>
+        )}
+      </motion.ul>
     </section>
   );
 
@@ -187,7 +205,7 @@ export function LocationPicker({ open, onClose, campaignId, currentPath }: Props
         )}
 
         {tab === 'favoris' && (
-          <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto scrollbar-thin">
+          <motion.ul variants={LIST} initial="hidden" animate="show" className="min-h-0 flex-1 space-y-1 overflow-y-auto scrollbar-thin">
             {favorites.length ? (
               favorites.map((l) => row(l, { showPath: true }))
             ) : (
@@ -195,25 +213,25 @@ export function LocationPicker({ open, onClose, campaignId, currentPath }: Props
                 Aucun favori. Touchez l’étoile d’un lieu sur l’écran Exploration pour l’ajouter.
               </li>
             )}
-          </ul>
+          </motion.ul>
         )}
 
         {tab === 'recents' && (
-          <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto scrollbar-thin">
+          <motion.ul variants={LIST} initial="hidden" animate="show" className="min-h-0 flex-1 space-y-1 overflow-y-auto scrollbar-thin">
             {recents.length ? (
               recents.map((l) => (
-                <div key={l.id} className="flex items-center gap-2">
+                <motion.div key={l.id} variants={ROW} className="flex items-center gap-2">
                   <div className="min-w-0 flex-1">{row(l, { showPath: true })}</div>
                   <span className="flex shrink-0 items-center gap-1 pr-2 text-sm text-parchment-400">
                     <Clock className="size-4" />
                     {new Date(l.lastVisitedAt!).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}
                   </span>
-                </div>
+                </motion.div>
               ))
             ) : (
               <li className="px-2 py-3 text-lg italic text-parchment-400">Aucun lieu visité pour l’instant.</li>
             )}
-          </ul>
+          </motion.ul>
         )}
       </div>
     </Sheet>

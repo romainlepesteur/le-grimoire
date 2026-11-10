@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Outlet } from 'react-router';
+import { useLocation, useOutlet } from 'react-router';
+import { AnimatePresence, motion } from 'motion/react';
 import { Feather } from 'lucide-react';
+import { EASE_OUT } from '@/ui/motion';
 import { NavRail } from './NavRail';
 import { StatusBar } from './StatusBar';
 import { useActiveCampaign, useSettings } from '@/hooks/data';
@@ -17,7 +19,8 @@ const BACKUP_REMINDER_MS = 3 * 24 * 60 * 60 * 1000;
 
 export function AppShell() {
   const { mode, setMode, immersive, diceOpen, setDiceOpen } = useSession();
-  // Les dés s'ouvrent depuis la barre du bas, accessible sur tous les écrans.
+  const location = useLocation();
+  const outlet = useOutlet();
   const settings = useSettings();
   const campaign = useActiveCampaign();
   const [confirmPrep, setConfirmPrep] = useState(false);
@@ -37,18 +40,39 @@ export function AppShell() {
 
   return (
     <div className="flex h-dvh w-full overflow-hidden tex-leather">
-      {!immersive && <NavRail backupDue={backupDue} onRequestMode={requestMode} />}
+      {/* Le mode immersion recouvre tout (calque fixe) : le cadre reste monté dessous, sans saut de mise en page. */}
+      <NavRail backupDue={backupDue} onRequestMode={requestMode} />
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        {mode === 'preparation' && !immersive && (
-          <div className="flex h-9 shrink-0 items-center justify-center gap-2 border-b border-ember-500/50 bg-ember-500/15 font-display text-xs font-semibold uppercase tracking-[0.2em] text-gold-200">
-            <Feather className="size-4" /> Mode Préparation — les modifications sont possibles
-          </div>
-        )}
+      <div className="flex min-w-0 flex-1 flex-col" aria-hidden={immersive || undefined}>
+        <AnimatePresence initial={false}>
+          {mode === 'preparation' && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 36, opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.35, ease: EASE_OUT }}
+              className="flex shrink-0 items-center justify-center gap-2 overflow-hidden border-b border-ember-500/50 bg-ember-500/15 font-display text-xs font-semibold uppercase tracking-[0.2em] text-gold-200"
+            >
+              <Feather className="size-4" /> Mode Préparation — les modifications sont possibles
+            </motion.div>
+          )}
+        </AnimatePresence>
         <main className="relative min-h-0 flex-1">
-          <Outlet />
+          {/* Fondu entre les écrans (opacité seule : aucun transform qui gênerait les calques fixes). */}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={location.pathname}
+              className="absolute inset-0"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: EASE_OUT }}
+            >
+              {outlet}
+            </motion.div>
+          </AnimatePresence>
         </main>
-        {!immersive && <StatusBar />}
+        <StatusBar />
       </div>
 
       <Sheet open={diceOpen} onClose={() => setDiceOpen(false)} title="Dés" subtitle="Lancers rapides, accessibles depuis tous les écrans">

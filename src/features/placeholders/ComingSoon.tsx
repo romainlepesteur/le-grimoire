@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
+import { motion } from 'motion/react';
 import { Hourglass } from 'lucide-react';
+import { EASE_OUT } from '@/ui/motion';
 import { Badge } from '@/ui/Badge';
 import { Divider, Panel } from '@/ui/Panel';
 import { cn } from '@/ui/cn';
@@ -19,7 +21,12 @@ export function ComingSoon({
   compact?: boolean;
 }) {
   return (
-    <div className={cn('flex h-full items-center justify-center', compact ? 'p-5' : 'p-8')}>
+    <motion.div
+      className={cn('flex h-full items-center justify-center', compact ? 'p-5' : 'p-8')}
+      initial={{ opacity: 0, y: 16, scale: 0.985 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.55, delay: compact ? 0.15 : 0, ease: EASE_OUT }}
+    >
       <Panel ornate className={cn('w-full max-w-xl text-center', compact ? 'px-6 py-7' : 'px-10 py-10')}>
         <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-full border border-bronze-500/50 text-bronze-600">
           {icon ?? <Hourglass className="size-7" strokeWidth={1.5} />}
@@ -37,6 +44,6 @@ export function ComingSoon({
         </ul>
         <p className="mt-5 text-base italic text-ink-500">Cet écran n’est pas encore fonctionnel.</p>
       </Panel>
-    </div>
+    </motion.div>
   );
 }

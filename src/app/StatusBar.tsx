@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { AnimatePresence, motion } from 'motion/react';
 import { Dices, Expand, MapPin, Music, Shrink, WifiOff } from 'lucide-react';
 import { useCurrentPlace } from '@/hooks/data';
 import { useFullscreen, useOnline } from '@/hooks/device';
@@ -19,7 +20,18 @@ export function StatusBar() {
     >
       <Link to="/" className="flex min-w-0 max-w-[32%] items-center gap-2 text-parchment-200 hover:text-gold-200">
         <MapPin className="size-5 shrink-0 text-bronze-400" />
-        <span className="truncate font-display text-sm tracking-wider">{location?.name ?? '—'}</span>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.span
+            key={location?.id ?? 'none'}
+            className="truncate font-display text-sm tracking-wider"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.25 }}
+          >
+            {location?.name ?? '—'}
+          </motion.span>
+        </AnimatePresence>
       </Link>
 
       <div className="flex min-w-0 flex-1 items-center justify-center gap-2 text-parchment-400">
