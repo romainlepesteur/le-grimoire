@@ -36,7 +36,7 @@ export function sortLocations(list: Location[]): Location[] {
 /** Champs modifiables depuis l'éditeur de lieu. */
 export type LocationDraft = Pick<
   Location,
-  'name' | 'kind' | 'parentId' | 'description' | 'theme' | 'imageId' | 'ambianceId'
+  'name' | 'kind' | 'parentId' | 'description' | 'theme' | 'imageId' | 'imageFocus' | 'ambianceId'
 >;
 
 /**

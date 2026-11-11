@@ -22,6 +22,7 @@ describe('édition des lieux', () => {
       description: '',
       theme: 'ville',
       imageId: null,
+      imageFocus: { x: 50, y: 50 },
       ambianceId: null,
     });
     expect(forge.name).toBe('La Forge');
@@ -75,5 +76,24 @@ describe('ambiances', () => {
 
     expect(await deleteAmbiance(amb.id)).toBe(1);
     expect((await db.locations.get(loc.id))!.ambianceId).toBeNull();
+  });
+});
+
+describe('cadrage des illustrations', () => {
+  it('le point de cadrage est enregistré par lieu et voyage dans les sauvegardes', async () => {
+    const { campaignId } = await bootstrap();
+    const { exportCampaign } = await import('@/services/backup/exportCampaign');
+    const { applyBackup, readBackupFile } = await import('@/services/backup/importCampaign');
+    const all = await listLocations(campaignId);
+    const ville = all.find((l) => l.name === 'Valdoren')!;
+    const img = await addMedia(campaignId, Object.assign(new Blob([new Uint8Array([7, 7, 7])], { type: 'image/webp' }), { name: 'v.webp' }), 'image');
+    await saveLocation(campaignId, ville.id, { ...ville, imageId: img.id, imageFocus: { x: 62, y: 40 } });
+    // Un lieu jamais recadré reste centré.
+    expect(all.find((l) => l.name === 'Grand marché')!.imageFocus).toEqual({ x: 50, y: 50 });
+
+    const { blob } = await exportCampaign(campaignId);
+    await db.locations.update(ville.id, { imageFocus: { x: 50, y: 50 } });
+    await applyBackup(await readBackupFile(blob));
+    expect((await db.locations.get(ville.id))!.imageFocus).toEqual({ x: 62, y: 40 });
   });
 });

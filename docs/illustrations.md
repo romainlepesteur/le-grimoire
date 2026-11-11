@@ -102,7 +102,10 @@ fonctionne hors ligne) ; qualité 75–82.
 
 Mode Préparation → écran Exploration → bouton crayon **Modifier ce lieu** → *Importer une illustration*.
 L'application redimensionne l'image (2560 px au plus) et la convertit en WebP si besoin : une image
-de 18 Mo devient environ 700 Ko. Elle est stockée sur l'appareil et incluse dans les sauvegardes
+de 18 Mo devient environ 700 Ko. Sur l'écran Exploration d'une tablette, le cadre est presque carré : environ 60 % de la
+largeur d'une image 16:9 reste visible. **Touchez l'aperçu** dans l'éditeur pour choisir le point à garder
+visible (un pointillé montre la zone affichée sur tablette) ; une même image peut être cadrée différemment
+selon le lieu. Elle est stockée sur l'appareil et incluse dans les sauvegardes
 exportées.
 
 > Les droits : vérifiez que vous avez le droit d'utiliser chaque image (images générées pour votre

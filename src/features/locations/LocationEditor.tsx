@@ -42,9 +42,26 @@ interface Draft {
   ambianceId: string | null;
   /** Image enregistrée (existante) ; remplacée par `newImage` si une nouvelle est choisie. */
   imageId: string | null;
+  /** Point à garder visible quand l'écran recadre l'illustration (en %). */
+  imageFocus: { x: number; y: number };
 }
 
-function ImagePreview({ imageId, prepared, theme }: { imageId: string | null; prepared: PreparedImage | null; theme: PlaceholderTheme }) {
+/** Part de la largeur d'une image 16:9 visible sur l'écran Exploration d'une tablette en paysage. */
+const TABLET_VISIBLE_WIDTH = 62;
+
+function ImagePreview({
+  imageId,
+  prepared,
+  theme,
+  focus,
+  onFocus,
+}: {
+  imageId: string | null;
+  prepared: PreparedImage | null;
+  theme: PlaceholderTheme;
+  focus: { x: number; y: number };
+  onFocus: (f: { x: number; y: number }) => void;
+}) {
   const stored = useMediaUrl(prepared ? null : imageId);
   const [draftUrl, setDraftUrl] = useState<string | null>(null);
   useEffect(() => {
@@ -66,7 +83,31 @@ function ImagePreview({ imageId, prepared, theme }: { imageId: string | null; pr
           transition={{ duration: 0.5 }}
         >
           {url ? (
-            <img src={url} alt="" className="size-full object-cover" />
+            <button
+              type="button"
+              className="relative block size-full cursor-crosshair"
+              title="Touchez le point à garder visible"
+              aria-label="Choisir le point de cadrage de l’illustration"
+              onClick={(e) => {
+                const r = e.currentTarget.getBoundingClientRect();
+                const round = (v: number) => Math.round(Math.max(0, Math.min(100, v)));
+                onFocus({ x: round(((e.clientX - r.left) / r.width) * 100), y: round(((e.clientY - r.top) / r.height) * 100) });
+              }}
+            >
+              <img src={url} alt="" className="size-full object-cover" draggable={false} />
+              {/* Zone visible sur tablette (cadre presque carré de l'écran Exploration). */}
+              <span
+                className="pointer-events-none absolute inset-y-0 border-x-2 border-dashed border-gold-200/90 bg-transparent shadow-[0_0_0_9999px_rgb(20_13_8/0.45)]"
+                style={{
+                  width: `${TABLET_VISIBLE_WIDTH}%`,
+                  left: `${Math.max(0, Math.min(100 - TABLET_VISIBLE_WIDTH, focus.x - TABLET_VISIBLE_WIDTH / 2))}%`,
+                }}
+              />
+              <span
+                className="pointer-events-none absolute size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-leather-950 bg-gold-300 shadow"
+                style={{ left: `${focus.x}%`, top: `${focus.y}%` }}
+              />
+            </button>
           ) : (
             <EmptyIllustration theme={theme} showHint={false} />
           )}
@@ -116,6 +157,7 @@ export function LocationEditor({
         theme: l.theme,
         ambianceId: l.ambianceId,
         imageId: l.imageId,
+        imageFocus: l.imageFocus ?? { x: 50, y: 50 },
       });
     } else {
       const parentId = target.parentId ?? null;
@@ -128,6 +170,7 @@ export function LocationEditor({
         theme: parent?.theme ?? 'autre',
         ambianceId: null,
         imageId: null,
+        imageFocus: { x: 50, y: 50 },
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -299,7 +342,7 @@ export function LocationEditor({
                 Illustration
               </span>
               <div className="relative">
-                <ImagePreview imageId={draft.imageId} prepared={prepared} theme={draft.theme} />
+                <ImagePreview imageId={draft.imageId} prepared={prepared} theme={draft.theme} focus={draft.imageFocus} onFocus={(f) => set('imageFocus', f)} />
                 {processing && (
                   <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-leather-950/70 text-parchment-200">
                     <Loader2 className="mr-2 size-6 animate-spin" /> Préparation de l’image…

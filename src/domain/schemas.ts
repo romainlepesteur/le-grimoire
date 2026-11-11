@@ -173,6 +173,8 @@ export const locationSchema = z.object({
   name: z.string().trim().min(1).max(200),
   description: z.string().max(5000).default(''),
   imageId: id.nullable().default(null),
+  /** Point de l'illustration à garder visible quand l'écran la recadre (en %, centre par défaut). */
+  imageFocus: z.object({ x: z.number().min(0).max(100), y: z.number().min(0).max(100) }).default({ x: 50, y: 50 }),
   ambianceId: id.nullable().default(null),
   theme: z.enum(PLACEHOLDER_THEMES).default('autre'),
   favorite: z.boolean().default(false),

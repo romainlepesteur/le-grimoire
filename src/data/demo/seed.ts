@@ -98,6 +98,7 @@ export async function seedDemoCampaign(): Promise<string> {
     name: p.name,
     description: p.description,
     imageId: null,
+    imageFocus: { x: 50, y: 50 },
     ambianceId: null,
     theme: p.theme,
     favorite: p.key === 'auberge',

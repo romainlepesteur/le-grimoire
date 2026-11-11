@@ -23,6 +23,11 @@ function Layer({ location, ambient }: { location: Location; ambient: boolean }) 
             alt={location.name}
             draggable={false}
             className={cn('size-full object-cover', ambient && 'animate-slow-zoom')}
+            // Point à garder visible quand l'écran recadre l'image (tablette : cadre presque carré).
+            style={{
+              objectPosition: `${location.imageFocus?.x ?? 50}% ${location.imageFocus?.y ?? 50}%`,
+              transformOrigin: `${location.imageFocus?.x ?? 50}% ${location.imageFocus?.y ?? 50}%`,
+            }}
           />
         )
       ) : (
