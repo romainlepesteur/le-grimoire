@@ -62,6 +62,7 @@ export function checkIntegrity(input: Backup): IntegrityReport {
   }
   for (const f of t.fogMasks) if (!maps.has(f.mapId)) errors.push(`brouillard ${f.id} : carte introuvable`);
   for (const c of t.characters) needMedia(c.portraitId, 'image', `portrait de « ${c.name} »`);
+  needMedia(b.campaign.coverId, 'image', 'couverture de la campagne');
 
   // Règles : chaque compétence et la chance visent une caractéristique existante.
   const rules = b.campaign.rules;

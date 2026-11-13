@@ -11,7 +11,6 @@ import { updateSettings } from '@/services/db/settings';
 import { useSession } from '@/stores/session';
 import { toast } from '@/stores/toasts';
 import { useCheck } from '@/stores/check';
-import { Toaster } from '@/ui/Toaster';
 import { ErrorBoundary } from '@/ui/ErrorBoundary';
 import { Button } from '@/ui/Button';
 import { ConfirmDialog, Dialog } from '@/ui/Dialog';
@@ -175,7 +174,6 @@ export function AppShell() {
         </p>
       </Dialog>
 
-      <Toaster />
     </div>
   );
 }

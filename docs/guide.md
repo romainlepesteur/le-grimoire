@@ -14,9 +14,26 @@ ambiances, tient la carte, les fiches, l'inventaire et le journal, et lance les 
 4. Une fois ouvert une première fois, **tout fonctionne sans connexion**.
 
 > Tout est enregistré **sur la tablette**. Désinstaller l'application ou effacer les données de
-> Chrome efface la campagne : exportez une sauvegarde régulièrement (voir § 7).
+> Chrome efface la campagne : exportez une sauvegarde régulièrement (voir § 8).
 
-## 2. Les deux modes
+## 2. L'accueil : vos campagnes
+
+L'application s'ouvre sur l'**accueil**, qui présente les campagnes installées sur la tablette, chacune
+avec sa couverture. La dernière campagne jouée est en tête.
+
+- **Ouvrir une campagne** : touchez sa couverture. Elle reprend là où vous l'aviez laissée.
+- **Importer un pack** : un pack est un fichier `.zip` qui contient une campagne complète (lieux,
+  cartes, illustrations, sons, ambiances, fiches, inventaire, journal). Le fichier est vérifié avant
+  toute écriture. S'il s'agit d'une campagne déjà présente, l'application prévient qu'elle sera
+  **remplacée, progression comprise**, et propose de l'exporter d'abord.
+- **Nouvelle campagne** : elle démarre vide ; ses lieux se créent en mode Préparation.
+- **⋮ sur une couverture** : choisir l'image de couverture (format portrait 2:3, par exemple
+  1000 × 1500), renommer, exporter ou supprimer la campagne. Sans couverture, l'accueil montre une
+  illustration de la campagne.
+- **Changer de campagne** en cours de route : l'emblème *Campagnes*, en haut de la barre latérale.
+  Tout est déjà enregistré ; l'ambiance sonore s'arrête.
+
+## 3. Les deux modes
 
 | Mode | Pour quoi | Ce qui est modifiable |
 |---|---|---|
@@ -26,7 +43,7 @@ ambiances, tient la carte, les fiches, l'inventaire et le journal, et lance les 
 L'application **redémarre toujours en mode Jeu** : le monde ne peut pas être modifié par erreur en
 pleine partie.
 
-## 3. Pendant la partie
+## 4. Pendant la partie
 
 - **Changer de lieu** : panneau du lieu → *Changer de lieu* (région › zone › lieu, favoris, récents).
   L'illustration et l'ambiance changent en fondu.
@@ -49,7 +66,7 @@ pleine partie.
 - **Carte** : consultation seulement. Toucher un lieu ouvre sa fiche ; *Déplacer le personnage
   ici…* demande confirmation (seulement si le MJ vous y amène). *Où suis-je ?* recentre la carte.
 
-## 4. Fiches, règles et traits
+## 5. Fiches, règles et traits
 
 - **Caractéristiques** (score 1–20, modificateur calculé : 10 → +0, 14 → +2) et **compétences**
   (rang Formé +2, Expert +4, bonus divers). Bouton *Modifier* pour ajuster scores et rangs.
@@ -60,7 +77,7 @@ pleine partie.
 - **Règles de jeu** (Réglages, mode Préparation) : dé de résolution, liste des caractéristiques et
   compétences, valeur des rangs, chance, types et états des traits. Renommer ne casse rien.
 
-## 5. Préparer le monde (mode Préparation)
+## 6. Préparer le monde (mode Préparation)
 
 - **Lieux** : crayon *Modifier ce lieu* ou bouton **+** sur l'Exploration ; ou depuis *Changer de
   lieu* (« Nouvelle région », « Zone dans… », « Lieu dans… »). Trois niveaux : région › zone › lieu.
@@ -73,21 +90,24 @@ pleine partie.
   *Révéler autour de la position* (rayon réglable), *Placer* un lieu. Un marqueur est *caché*,
   *rumeur* (zone approximative) ou *connu*. *Voir comme le joueur* montre le mode Jeu.
 
-## 6. Mises à jour
+## 7. Mises à jour
 
 Quand une nouvelle version est publiée, Réglages affiche *Mettre à jour*. Rien n'est imposé en pleine
 partie : appliquez la mise à jour entre deux sessions.
 
-## 7. Sauvegardes
+## 8. Sauvegardes
 
 - **Réglages → Exporter la campagne** : un fichier `.zip` (données + images + sons). Rangez-le
   ailleurs que sur la tablette (PC, clé USB, Drive). Un point orange sur *Réglages* rappelle d'exporter
   quand la dernière sauvegarde date de plus de 3 jours.
-- **Restaurer** (mode Préparation) : le fichier est entièrement vérifié avant toute écriture, puis la
-  campagne est remplacée en une seule opération (tout ou rien).
+- **Exporter depuis l'accueil** : ⋮ sur la couverture → *Exporter*. L'archive sert aussi de pack pour
+  installer la campagne sur un autre appareil.
+- **Restaurer** : *Importer un pack* sur l'accueil (ou Réglages, en mode Préparation). Le fichier est
+  entièrement vérifié avant toute écriture, puis la campagne est remplacée en une seule opération
+  (tout ou rien).
 - Les sauvegardes des versions précédentes restent lisibles par les versions suivantes.
 
-## 8. En cas de souci
+## 9. En cas de souci
 
 | Symptôme | Que faire |
 |---|---|

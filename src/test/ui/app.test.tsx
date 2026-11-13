@@ -34,11 +34,25 @@ beforeAll(() => {
   } as unknown as typeof ResizeObserver;
   HTMLCanvasElement.prototype.getContext = (() => null) as never;
   Element.prototype.scrollIntoView ??= () => undefined;
+  // Lecture d'un fichier (import d'un pack) : absente des fichiers simulés.
+  const read = (blob: Blob, how: 'readAsArrayBuffer' | 'readAsText') =>
+    new Promise<never>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as never);
+      reader.onerror = () => reject(reader.error);
+      reader[how](blob);
+    });
+  Blob.prototype.arrayBuffer ??= function (this: Blob) {
+    return read(this, 'readAsArrayBuffer');
+  };
+  Blob.prototype.text ??= function (this: Blob) {
+    return read(this, 'readAsText');
+  };
 });
 
 beforeEach(async () => {
   window.location.hash = '#/';
-  useSession.setState({ mode: 'jeu', quickOpen: false, diceOpen: false, immersive: false });
+  useSession.setState({ campaignId: null, mode: 'jeu', quickOpen: false, diceOpen: false, immersive: false });
   await db.open();
   await updateSettings({ storageNoticeSeen: true, ambientEffects: false, wakeLock: false });
 });
@@ -48,12 +62,20 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-async function startApp() {
+/** Ouvre l'application : elle s'arrête sur l'accueil des campagnes. */
+async function startHome() {
   const user = userEvent.setup();
   // Comme la vraie page : l'application est montée dans #root (rendu inerte sous une fenêtre).
   document.getElementById('root')?.remove();
   const root = document.body.appendChild(Object.assign(document.createElement('div'), { id: 'root' }));
   render(<App />, { container: root });
+  return user;
+}
+
+/** Ouvre l'application puis la campagne d'exemple depuis l'accueil. */
+async function startApp() {
+  const user = await startHome();
+  await user.click(await screen.findByRole('button', { name: /^Ouvrir Valdoren/ }, { timeout: 5000 }));
   // L'Exploration s'affiche sur le lieu courant de la campagne d'exemple.
   await screen.findByRole('button', { name: 'Changer de lieu' }, { timeout: 5000 });
   return user;
@@ -177,5 +199,68 @@ describe('préparation', () => {
     await user.click(within(confirm).getByRole('button', { name: 'Passer en Préparation' }));
     expect(await screen.findByRole('button', { name: 'Modifier ce lieu' })).toBeTruthy();
     expect(useSession.getState().mode).toBe('preparation');
+  });
+});
+
+describe('accueil des campagnes', () => {
+  it('s’ouvre sur l’accueil ; une campagne s’ouvre d’un toucher et l’emblème y ramène', async () => {
+    const user = await startHome();
+    await screen.findByRole('heading', { name: 'Vos campagnes' }, { timeout: 5000 });
+    // Aucune campagne n'est ouverte d'office.
+    expect(screen.queryByRole('button', { name: 'Changer de lieu' })).toBeNull();
+    expect(await screen.findByRole('button', { name: /Importer un pack/ })).toBeTruthy();
+    await user.click(await screen.findByRole('button', { name: /^Ouvrir Valdoren/ }));
+    await screen.findByRole('button', { name: 'Changer de lieu' }, { timeout: 5000 });
+
+    await user.click(screen.getByRole('button', { name: 'Passer en mode Préparation' }));
+    await user.click(await within(await screen.findByRole('alertdialog')).findByRole('button', { name: 'Passer en Préparation' }));
+    await user.click(screen.getByRole('button', { name: 'Changer de campagne' }));
+    await screen.findByRole('heading', { name: 'Vos campagnes' });
+    // Revenir à l'accueil repasse en mode Jeu : la campagne suivante s'ouvre protégée.
+    expect(useSession.getState().mode).toBe('jeu');
+  });
+
+  it('crée une campagne, la retrouve sur l’accueil, puis la supprime après confirmation', async () => {
+    const user = await startHome();
+    await user.click(await screen.findByRole('button', { name: /Nouvelle campagne/ }, { timeout: 5000 }));
+    const dialog = await screen.findByRole('alertdialog');
+    await user.type(within(dialog).getByRole('textbox'), 'Les Terres du Nord');
+    await user.click(within(dialog).getByRole('button', { name: 'Créer' }));
+    // Elle s'ouvre aussitôt, vide.
+    await screen.findByText('Aucun lieu sélectionné', {}, { timeout: 5000 });
+    expect(await db.campaigns.count()).toBe(2);
+
+    await user.click(screen.getByRole('button', { name: 'Changer de campagne' }));
+    await user.click(await screen.findByRole('button', { name: 'Gérer Les Terres du Nord' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Les Terres du Nord' });
+    await user.click(within(sheet).getByRole('button', { name: 'Supprimer la campagne' }));
+    const confirm = await screen.findByRole('alertdialog');
+    // Rien n'est supprimé avant la confirmation.
+    expect(await db.campaigns.count()).toBe(2);
+    await user.click(within(confirm).getByRole('button', { name: 'Supprimer' }));
+    await waitFor(async () => expect(await db.campaigns.count()).toBe(1));
+    await waitFor(() => expect(screen.queryByRole('button', { name: /^Ouvrir Les Terres/ })).toBeNull());
+    expect(screen.getByRole('button', { name: /^Ouvrir Valdoren/ })).toBeTruthy();
+  });
+
+  it('importe un pack depuis l’accueil, sans ouvrir de campagne', async () => {
+    // Un pack : une campagne exportée ailleurs, absente de cet appareil.
+    const { createCampaign, deleteCampaign } = await import('@/services/db/campaigns');
+    const { exportCampaign } = await import('@/services/backup/exportCampaign');
+    const pack = await createCampaign('Les Îles de Brume');
+    const { blob, filename } = await exportCampaign(pack.id);
+    await deleteCampaign(pack.id);
+
+    const user = await startHome();
+    await screen.findByRole('heading', { name: 'Vos campagnes' }, { timeout: 5000 });
+    expect(screen.queryByRole('button', { name: /^Ouvrir Les Îles/ })).toBeNull();
+    await user.upload(screen.getByLabelText('Fichier du pack à importer'), new File([blob], filename, { type: 'application/zip' }));
+    const preview = await screen.findByRole('alertdialog', {}, { timeout: 5000 });
+    expect(within(preview).getByText('Les Îles de Brume')).toBeTruthy();
+    await user.click(within(preview).getByRole('button', { name: 'Importer' }));
+    // La campagne rejoint l'accueil ; on y reste.
+    await screen.findByRole('button', { name: /^Ouvrir Les Îles de Brume/ }, { timeout: 5000 });
+    expect(screen.getByRole('heading', { name: 'Vos campagnes' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Changer de lieu' })).toBeNull();
   });
 });

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { HardDrive, RefreshCw } from 'lucide-react';
+import { HardDrive, LibraryBig, RefreshCw } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { motion } from 'motion/react';
 import { EASE_OUT } from '@/ui/motion';
@@ -12,7 +12,7 @@ import { db } from '@/services/db/database';
 import { updateSettings } from '@/services/db/settings';
 import { formatBytes, getStorageInfo, requestPersistence, type StorageInfo } from '@/services/storage';
 import { usePwa } from '@/stores/pwa';
-import { useIsPrep } from '@/stores/session';
+import { useIsPrep, useSession } from '@/stores/session';
 import { toast } from '@/stores/toasts';
 import { Badge } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
@@ -47,6 +47,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
 function CampaignSection() {
   const campaign = useActiveCampaign();
   const isPrep = useIsPrep();
+  const closeCampaign = useSession((s) => s.closeCampaign);
   const [name, setName] = useState('');
   useEffect(() => setName(campaign?.name ?? ''), [campaign?.name]);
   const counts = useLiveQuery(async () => {
@@ -98,6 +99,12 @@ function CampaignSection() {
           {new Date(campaign.createdAt).toLocaleDateString('fr-FR', { dateStyle: 'long' })}
         </p>
       )}
+      <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-ink-700/15 pt-4">
+        <Button variant="ink" icon={<LibraryBig className="size-5" />} onClick={closeCampaign}>
+          Changer de campagne
+        </Button>
+        <span className="text-base text-ink-500">Retour à l’accueil : couverture, import d’un pack, autres campagnes.</span>
+      </div>
     </Panel>
   );
 }

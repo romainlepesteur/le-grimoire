@@ -11,6 +11,7 @@ export type QuickTab = 'objet' | 'note' | 'pv';
 export type AppMode = 'jeu' | 'preparation';
 
 interface SessionState {
+  /** Campagne ouverte ; `null` : l'accueil (choix de la campagne) est affiché. */
   campaignId: string | null;
   mode: AppMode;
   immersive: boolean;
@@ -19,6 +20,8 @@ interface SessionState {
   quickOpen: boolean;
   quickTab: QuickTab;
   setCampaignId: (id: string) => void;
+  /** Revient à l'accueil : referme les tiroirs et repasse en mode Jeu. */
+  closeCampaign: () => void;
   setMode: (mode: AppMode) => void;
   setImmersive: (v: boolean) => void;
   setDiceOpen: (v: boolean) => void;
@@ -33,6 +36,7 @@ export const useSession = create<SessionState>((set) => ({
   quickOpen: false,
   quickTab: 'objet',
   setCampaignId: (campaignId) => set({ campaignId }),
+  closeCampaign: () => set({ campaignId: null, mode: 'jeu', immersive: false, diceOpen: false, quickOpen: false }),
   setMode: (mode) => set({ mode }),
   setImmersive: (immersive) => set({ immersive }),
   setDiceOpen: (diceOpen) => set({ diceOpen }),

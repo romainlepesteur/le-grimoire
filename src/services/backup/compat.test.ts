@@ -27,6 +27,9 @@ describe('compatibilité des sauvegardes existantes', () => {
       // Seul ajout depuis la référence : les règles de jeu par défaut, données aux campagnes qui n'en ont pas.
       expect(actual.campaign.rules).toEqual(rulesOf(undefined));
       delete actual.campaign.rules;
+      // Ajouté ensuite : couverture de la campagne (aucune par défaut).
+      expect(actual.campaign.coverId).toBeNull();
+      delete actual.campaign.coverId;
       // Ajouté ensuite : point de cadrage des illustrations, centré par défaut.
       for (const l of actual.tables.locations) {
         expect(l.imageFocus).toEqual({ x: 50, y: 50 });

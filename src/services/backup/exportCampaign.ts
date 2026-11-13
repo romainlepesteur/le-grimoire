@@ -26,7 +26,7 @@ Ce fichier ZIP contient une campagne complète :
 - grimoire.json : lieux, ambiances, fiches, inventaire, journal, carte… (format JSON lisible)
 - media/        : les images et sons importés (un fichier par média, nommé par son identifiant)
 
-Pour restaurer : Le Grimoire → Réglages → Importer une sauvegarde (en mode Préparation).
+Pour restaurer ou installer : Le Grimoire → accueil « Vos campagnes » → Importer un pack.
 Ne modifiez pas ce fichier à la main sauf si vous savez ce que vous faites.
 `;
 
@@ -79,6 +79,7 @@ export async function exportCampaign(campaignId: string): Promise<ExportResult> 
   if (missingIds.size) {
     const drop = (id: string | null) => (id && missingIds.has(id) ? null : id);
     tables.mediaMeta = tables.mediaMeta.filter((m) => !missingIds.has(m.id));
+    backup.campaign = { ...campaign, coverId: drop(campaign.coverId) };
     tables.locations = tables.locations.map((l) => ({ ...l, imageId: drop(l.imageId) }));
     tables.maps = tables.maps.map((m) => ({ ...m, imageId: drop(m.imageId) }));
     tables.characters = tables.characters.map((c) => ({ ...c, portraitId: drop(c.portraitId) }));

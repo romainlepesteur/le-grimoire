@@ -115,6 +115,7 @@ export async function seedDemoCampaign(): Promise<string> {
     description:
       'Campagne de démonstration livrée avec Le Grimoire. Ses lieux sont des exemples, sans scénario ni secret.',
     isDemo: true,
+    coverId: null,
     currentLocationId: ids.get('auberge')!,
     currentMapId: null,
     rules: rulesSchema.parse({}),

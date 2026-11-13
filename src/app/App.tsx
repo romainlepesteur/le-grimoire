@@ -2,9 +2,11 @@ import { lazy, Suspense, useEffect, useState, type ComponentType } from 'react';
 import { HashRouter, Route, Routes } from 'react-router';
 import { MotionConfig } from 'motion/react';
 import { AppShell } from './AppShell';
-import { bootstrap } from './bootstrap';
+import { startup } from './bootstrap';
 import { useSession } from '@/stores/session';
 import { ExplorationPage } from '@/features/exploration/ExplorationPage';
+import { HomePage } from '@/features/home/HomePage';
+import { Toaster } from '@/ui/Toaster';
 import { Panel } from '@/ui/Panel';
 import { useVisualViewportVars } from '@/ui/overlay';
 
@@ -53,25 +55,24 @@ function Splash({ error }: { error?: string }) {
 }
 
 export function App() {
-  const setCampaignId = useSession((s) => s.setCampaignId);
+  const campaignId = useSession((s) => s.campaignId);
   // Zone réellement visible (clavier virtuel compris), pour caler les fenêtres.
   useVisualViewportVars();
   const [state, setState] = useState<{ ready: boolean; error?: string }>({ ready: false });
 
   useEffect(() => {
-    bootstrap()
-      .then(({ campaignId }) => {
-        setCampaignId(campaignId);
-        setState({ ready: true });
-      })
+    // Aucune campagne n'est ouverte d'office : l'accueil les présente.
+    startup()
+      .then(() => setState({ ready: true }))
       .catch((e: Error) => setState({ ready: false, error: e.message }));
-  }, [setCampaignId]);
+  }, []);
 
   if (!state.ready) return <Splash error={state.error} />;
 
   return (
     // reducedMotion="user" : si Android est réglé sur « réduire les animations », Motion les coupe.
     <MotionConfig reducedMotion="user">
+    {campaignId ? (
     <HashRouter>
       <Routes>
         <Route element={<AppShell />}>
@@ -86,6 +87,10 @@ export function App() {
         </Route>
       </Routes>
     </HashRouter>
+    ) : (
+      <HomePage />
+    )}
+    <Toaster />
     </MotionConfig>
   );
 }

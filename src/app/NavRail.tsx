@@ -73,6 +73,7 @@ function RailLink({
 
 export function NavRail({ backupDue, onRequestMode }: { backupDue: boolean; onRequestMode: () => void }) {
   const mode = useSession((s) => s.mode);
+  const closeCampaign = useSession((s) => s.closeCampaign);
   const prep = mode === 'preparation';
   return (
     <nav
@@ -80,9 +81,17 @@ export function NavRail({ backupDue, onRequestMode }: { backupDue: boolean; onRe
       className="flex w-[92px] shrink-0 flex-col items-center gap-1 border-r border-bronze-500/25 px-2 pb-3 tex-wood"
       style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))', paddingLeft: 'max(0.5rem, env(safe-area-inset-left))' }}
     >
-      <div className="mb-2 flex flex-col items-center [@media(max-height:700px)]:mb-0" aria-hidden>
-        <img src="./icons/favicon.svg" alt="" className="size-11 animate-compass-in drop-shadow [@media(max-height:700px)]:size-9" />
-      </div>
+      {/* L'emblème ramène à l'accueil : choix de la campagne. Tout est déjà enregistré. */}
+      <button
+        type="button"
+        onClick={closeCampaign}
+        title="Changer de campagne"
+        aria-label="Changer de campagne"
+        className="group mb-1 flex w-full shrink-0 flex-col items-center gap-0.5 rounded-lg py-1 text-parchment-300 transition-colors duration-300 hover:bg-parchment-100/5 hover:text-parchment-100 active:scale-95 [@media(max-height:700px)]:mb-0"
+      >
+        <img src="./icons/favicon.svg" alt="" className="size-10 animate-compass-in drop-shadow [@media(max-height:700px)]:size-8" />
+        <span className="max-w-full truncate font-display text-[0.58rem] font-semibold uppercase tracking-[0.06em]">Campagnes</span>
+      </button>
       {ITEMS.map((it) => (
         <RailLink key={it.to} {...it} />
       ))}

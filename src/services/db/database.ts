@@ -81,6 +81,7 @@ export class GrimoireDB extends Dexie {
 
     // Données enregistrées par une version antérieure : les champs ajoutés depuis
     // reçoivent leur valeur par défaut à la lecture (rien n'est réécrit sur le disque).
+    this.campaigns.hook('reading', (c) => (!c || c.coverId !== undefined ? c : { ...c, coverId: null }));
     this.characters.hook('reading', (c) => ({ ...CHARACTER_DEFAULTS, ...c }));
     this.locations.hook('reading', (l) => (!l || l.imageFocus ? l : { ...l, imageFocus: { x: 50, y: 50 } }));
     this.diceRolls.hook('reading', (r) => ({ ...ROLL_DEFAULTS, ...r }));

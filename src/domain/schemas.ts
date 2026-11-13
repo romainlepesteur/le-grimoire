@@ -108,6 +108,8 @@ export const campaignSchema = z.object({
   description: z.string().max(5000).default(''),
   /** Campagne d'exemple livrée avec l'application. */
   isDemo: z.boolean().default(false),
+  /** Image de couverture (format portrait) affichée sur l'accueil des campagnes. */
+  coverId: id.nullable().default(null),
   /** Lieu affiché sur l'écran Exploration. */
   currentLocationId: id.nullable().default(null),
   /** Carte affichée sur l'écran Carte. */
