@@ -1,9 +1,9 @@
-import { useEffect, useImperativeHandle, useRef, type Ref } from 'react';
+import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './map.css';
 import type { FogMask, GameMap, Location, MapMarker } from '@/domain/schemas';
-import { Fog, rumorCenter, type BrushMode } from './fog';
+import { Fog, markerShown, rumorCenter, type BrushMode } from './fog';
 
 export type MapTool = 'move' | 'reveal' | 'cover' | 'place';
 
@@ -13,6 +13,8 @@ export interface MapViewApi {
   /** Révèle un disque centré sur (x, y), rayon en pixels de carte. */
   revealAround: (x: number, y: number, r: number) => void;
   flyTo: (x: number, y: number) => void;
+  /** Ce point de la carte (pixels de carte) est-il hors du brouillard ? */
+  isRevealed: (x: number, y: number) => boolean;
   fitAll: () => void;
   zoom: (delta: number) => void;
 }
@@ -26,8 +28,13 @@ export interface MapViewProps {
   fogOpacity: number;
   markers: MapMarker[];
   locations: Map<string, Location>;
-  /** Vue du joueur : marqueurs cachés invisibles, rumeurs réduites à une zone. */
+  /** Vue du joueur : rumeurs réduites à une zone (comme en mode Jeu). */
   playerView: boolean;
+  /**
+   * Sans spoil : lieux cachés et lieux sous le brouillard invisibles (mode Jeu, et Préparation
+   * tant qu'on ne choisit pas de voir sous le brouillard).
+   */
+  spoilFree: boolean;
   editable: boolean;
   tool: MapTool;
   brushSize: number;
@@ -63,6 +70,9 @@ export function MapView(props: MapViewProps) {
   // Dernières props, lues par les gestionnaires d'événements Leaflet (créés une seule fois).
   const live = useRef(props);
   live.current = props;
+  /** Change à chaque modification du masque : les lieux découverts apparaissent aussitôt. */
+  const [maskVersion, setMaskVersion] = useState(0);
+  const maskChanged = () => setMaskVersion((v) => v + 1);
 
   const toLatLng = (x: number, y: number) => L.latLng(map.height - y, x);
   const fromLatLng = (ll: L.LatLng) => ({ x: ll.lng, y: map.height - ll.lat });
@@ -132,7 +142,10 @@ export function MapView(props: MapViewProps) {
     f.opacity = live.current.fogOpacity;
     fog.current = f;
     loadedMask.current = fogRow.mask;
-    void f.load(fogRow.mask).then(() => live.current.onUndoChange(false));
+    void f.load(fogRow.mask).then(() => {
+      live.current.onUndoChange(false);
+      maskChanged();
+    });
     const layer = L.svgOverlay(f.view as unknown as SVGElement, L.latLngBounds([0, 0], [map.height, map.width]), {
       className: 'gm-fog',
       interactive: false,
@@ -158,7 +171,10 @@ export function MapView(props: MapViewProps) {
     const f = fog.current;
     if (!f || !fogRow || fogRow.mask === loadedMask.current) return;
     loadedMask.current = fogRow.mask;
-    void f.load(fogRow.mask).then(() => live.current.onUndoChange(false));
+    void f.load(fogRow.mask).then(() => {
+      live.current.onUndoChange(false);
+      maskChanged();
+    });
   }, [fogRow?.mask, fogRow]);
 
   useEffect(() => {
@@ -250,6 +266,7 @@ export function MapView(props: MapViewProps) {
       if (painting && fog.current) {
         fog.current.endStroke();
         live.current.onUndoChange(fog.current.canUndo);
+        maskChanged();
         persistSoon();
       }
       painting = false;
@@ -277,9 +294,13 @@ export function MapView(props: MapViewProps) {
     const group = markerLayer.current;
     if (!group) return;
     group.clearLayers();
-    const { markers, locations, playerView, editable, tool, currentLocationId, selectedMarkerId } = props;
+    const { markers, locations, playerView, spoilFree, fogVisible, editable, tool, currentLocationId, selectedMarkerId } = props;
+    const f = fog.current;
+    const k = f ? f.width / map.width : 1;
     for (const mk of markers) {
-      if (playerView && mk.status === 'cache') continue;
+      // Brouillard pas encore chargé : on ne montre rien de ce qu'il pourrait cacher.
+      const revealed = !!f && f.isRevealed(mk.x * k, mk.y * k);
+      if (!markerShown(mk, { spoilFree, fogActive: fogVisible, revealed, currentLocationId })) continue;
       const loc = mk.locationId ? locations.get(mk.locationId) : undefined;
       if (mk.locationId && !loc) continue;
       const name = loc?.name ?? (mk.label || 'Point d’intérêt');
@@ -344,6 +365,9 @@ export function MapView(props: MapViewProps) {
     props.markers,
     props.locations,
     props.playerView,
+    props.spoilFree,
+    props.fogVisible,
+    maskVersion,
     props.editable,
     props.tool,
     props.currentLocationId,
@@ -377,6 +401,7 @@ export function MapView(props: MapViewProps) {
         const f = fog.current;
         if (f?.undo()) {
           live.current.onUndoChange(f.canUndo);
+          maskChanged();
           persistSoon();
         }
       },
@@ -385,6 +410,7 @@ export function MapView(props: MapViewProps) {
         if (!f) return;
         f.fill(mode);
         live.current.onUndoChange(true);
+        maskChanged();
         persistSoon();
       },
       revealAround: (x, y, r) => {
@@ -393,11 +419,18 @@ export function MapView(props: MapViewProps) {
         const k = f.width / map.width;
         f.revealCircle(x * k, y * k, r * k);
         live.current.onUndoChange(true);
+        maskChanged();
         persistSoon();
       },
       flyTo: (x, y) => {
         const m = lmap.current;
         if (m) m.flyTo(toLatLng(x, y), Math.max(m.getZoom(), m.getMinZoom() + 1.5), { duration: 0.9 });
+      },
+      isRevealed: (x, y) => {
+        const f = fog.current;
+        if (!f) return false;
+        const k = f.width / map.width;
+        return f.isRevealed(x * k, y * k);
       },
       fitAll: () => lmap.current?.flyToBounds(L.latLngBounds([0, 0], [map.height, map.width]), { padding: [24, 24], duration: 0.7 }),
       zoom: (d) => (d > 0 ? lmap.current?.zoomIn(0.75) : lmap.current?.zoomOut(0.75)),

@@ -12,6 +12,8 @@
 export type BrushMode = 'reveal' | 'cover';
 
 const UNDO_LEVELS = 10;
+/** Opacité du masque à partir de laquelle un point compte comme révélé (0 à 255). */
+const REVEALED_ALPHA = 128;
 
 /** Pseudo-aléatoire reproductible : la brume a toujours le même aspect pour une carte donnée. */
 function seeded(seed: number) {
@@ -97,6 +99,17 @@ export class Fog {
     }
     this.undoStack = [];
     this.render();
+  }
+
+  /**
+   * La carte est-elle révélée en ce point (coordonnées du masque) ? Un point à moitié dans le
+   * fondu du pinceau compte comme révélé ; hors de la carte, non.
+   */
+  isRevealed(x: number, y: number): boolean {
+    const px = Math.floor(x);
+    const py = Math.floor(y);
+    if (px < 0 || py < 0 || px >= this.width || py >= this.height) return false;
+    return this.mctx.getImageData(px, py, 1, 1).data[3] >= REVEALED_ALPHA;
   }
 
   toDataURL(): string {
@@ -214,6 +227,27 @@ export class Fog {
     cancelAnimationFrame(this.frame);
     this.undoStack = [];
   }
+}
+
+/**
+ * Un marqueur s'affiche-t-il sur la carte ? (fonction pure, testée)
+ *
+ * Sans spoil (mode Jeu, ou Préparation sans « voir sous le brouillard ») :
+ * - un lieu caché n'apparaît pas ;
+ * - un lieu sous le brouillard n'apparaît pas, ni son nom, ni sa position : on le découvre en
+ *   dissipant le brouillard ;
+ * - exceptions : la position du personnage (il y est), et les rumeurs, qui ne donnent qu'une zone
+ *   approximative — c'est précisément ce qu'on sait d'un lieu dont on a entendu parler.
+ */
+export function markerShown(
+  mk: { status: 'cache' | 'rumeur' | 'connu'; locationId: string | null },
+  ctx: { spoilFree: boolean; fogActive: boolean; revealed: boolean; currentLocationId: string | null },
+): boolean {
+  if (!ctx.spoilFree) return true;
+  if (mk.status === 'cache') return false;
+  if (mk.status === 'rumeur') return true;
+  if (mk.locationId && mk.locationId === ctx.currentLocationId) return true;
+  return !ctx.fogActive || ctx.revealed;
 }
 
 /** Décalage stable (0..1) tiré d'un identifiant : sert à décentrer la zone d'une rumeur. */

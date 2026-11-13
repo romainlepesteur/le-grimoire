@@ -17,6 +17,7 @@ import {
   Minus,
   Plus,
   Radar,
+  ScanEye,
   Undo2,
   X,
 } from 'lucide-react';
@@ -74,6 +75,12 @@ export function MapPage() {
   const [tool, setTool] = useState<MapTool>('move');
   const [brushSize, setBrushSize] = useState(90);
   const [preview, setPreview] = useState(false);
+  /**
+   * Préparation : voir sous le brouillard (carte et lieux non découverts). Désactivé par défaut,
+   * pour pouvoir dissiper le brouillard au fil de la partie sans se gâcher la suite.
+   */
+  const [peek, setPeek] = useState(false);
+  const [confirmPeek, setConfirmPeek] = useState(false);
   const [canUndo, setCanUndo] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [placing, setPlacing] = useState<{ x: number; y: number } | null>(null);
@@ -92,6 +99,7 @@ export function MapPage() {
     if (!isPrep) {
       setTool('move');
       setPreview(false);
+      setPeek(false);
       setPlacing(null);
       setPendingLocation(null);
       setAroundOpen(false);
@@ -118,20 +126,22 @@ export function MapPage() {
   const playerView = !isPrep || preview;
   const editable = isPrep && !preview;
   const fogVisible = !!fog?.enabled;
-  const fogOpacity = playerView ? 1 : 0.6;
+  /** Sans spoil : ce qui est sous le brouillard reste caché, même en Préparation. */
+  const spoilFree = playerView || !peek;
+  const fogOpacity = spoilFree ? 1 : 0.6;
   // Position du personnage sur cette carte : son lieu, ou à défaut le lieu parent le plus proche
   // qui y figure (on est à l'auberge : on voit la ville).
   const currentLocationId = (() => {
     let id = campaign?.currentLocationId ?? null;
     for (let guard = 0; id && guard < 8; guard++) {
-      if (markers.some((m) => m.locationId === id && (!playerView || m.status === 'connu'))) return id;
+      if (markers.some((m) => m.locationId === id && (!spoilFree || m.status === 'connu'))) return id;
       id = locations.get(id)?.parentId ?? null;
     }
     return campaign?.currentLocationId ?? null;
   })();
-  const visibleMarkers = playerView ? markers.filter((m) => m.status !== 'cache') : markers;
+  const visibleMarkers = spoilFree ? markers.filter((m) => m.status !== 'cache') : markers;
   const selectedMarker = visibleMarkers.find((m) => m.id === selected);
-  const currentMarker = markers.find((m) => m.locationId === currentLocationId && (!playerView || m.status === 'connu'));
+  const currentMarker = markers.find((m) => m.locationId === currentLocationId && (!spoilFree || m.status === 'connu'));
   // En Préparation, la position compte même si son marqueur est encore caché au joueur.
   const prepPositionMarker = markers.find((m) => m.locationId === currentLocationId);
   const aroundPx = map ? Math.round(aroundRadius * Math.max(map.width, map.height)) : 0;
@@ -162,7 +172,12 @@ export function MapPage() {
       });
       setSelected(m.id);
       setTool('move');
-      toast({ tone: 'success', title: 'Marqueur placé' });
+      const hidden = spoilFree && fogVisible && choice.status === 'connu' && !api.current?.isRevealed(x, y);
+      toast(
+        hidden
+          ? { tone: 'info', title: 'Marqueur placé sous le brouillard', message: 'Il apparaîtra quand cette zone sera révélée.' }
+          : { tone: 'success', title: 'Marqueur placé' },
+      );
     } catch (e) {
       toast({ tone: 'error', title: 'Placement impossible', message: (e as Error).message });
     }
@@ -214,6 +229,7 @@ export function MapPage() {
           markers={visibleMarkers}
           locations={locations}
           playerView={playerView}
+          spoilFree={spoilFree}
           editable={editable}
           tool={editable ? tool : 'move'}
           brushSize={brushSize}
@@ -335,6 +351,14 @@ export function MapPage() {
                   <Radar className="size-5" />
                 </IconButton>
                 <IconButton
+                  label={peek ? 'Ne plus voir sous le brouillard' : 'Voir sous le brouillard (dévoile toute la carte)'}
+                  active={peek && !preview}
+                  disabled={preview}
+                  onClick={() => (peek ? setPeek(false) : setConfirmPeek(true))}
+                >
+                  <ScanEye className="size-5" />
+                </IconButton>
+                <IconButton
                   label={preview ? 'Quitter l’aperçu joueur' : 'Voir comme le joueur'}
                   active={preview}
                   onClick={() => {
@@ -423,6 +447,17 @@ export function MapPage() {
                     </Floating>
                   </motion.div>
                 )}
+                {peek && !preview && (
+                  <motion.div key="peek" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
+                    <Floating className="flex items-center gap-3 border-ember-500/60 px-4 py-2 text-base text-gold-200">
+                      <ScanEye className="size-5 text-ember-500" />
+                      Vous voyez sous le brouillard : toute la carte et tous les lieux.
+                      <Button variant="ghost" size="sm" onClick={() => setPeek(false)}>
+                        Masquer
+                      </Button>
+                    </Floating>
+                  </motion.div>
+                )}
                 {preview && (
                   <motion.div key="preview" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
                     <Floating className="px-4 py-2.5 text-base text-parchment-200">
@@ -497,6 +532,23 @@ export function MapPage() {
       />
       <MapManager open={managerOpen} onClose={() => setManagerOpen(false)} campaignId={campaign.id} maps={maps} currentMapId={map.id} />
       <LocationEditor campaignId={campaign.id} target={isPrep ? editor : null} onClose={() => setEditor(null)} />
+      <ConfirmDialog
+        open={confirmPeek}
+        title="Voir sous le brouillard ?"
+        message={
+          <>
+            Toute la carte et tous les lieux, même ceux qui ne sont pas encore découverts, seront visibles. Utile pour
+            construire la carte ou placer des lieux ; à éviter si vous voulez garder la surprise. Le brouillard redevient
+            opaque quand vous quittez la Préparation.
+          </>
+        }
+        confirmLabel="Voir sous le brouillard"
+        onCancel={() => setConfirmPeek(false)}
+        onConfirm={() => {
+          setPeek(true);
+          setConfirmPeek(false);
+        }}
+      />
       <ConfirmDialog
         open={!!confirmFill}
         title={confirmFill === 'reveal' ? 'Révéler toute la carte ?' : 'Recouvrir toute la carte ?'}

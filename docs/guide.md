@@ -63,8 +63,10 @@ pleine partie.
 - **Ambiance sonore** : touchez *Activer l'ambiance sonore* une fois par session (exigence des
   navigateurs). La barre du bas règle les volumes et permet de choisir une autre ambiance (combat,
   tension…) jusqu'au prochain lieu.
-- **Carte** : consultation seulement. Toucher un lieu ouvre sa fiche ; *Déplacer le personnage
-  ici…* demande confirmation (seulement si le MJ vous y amène). *Où suis-je ?* recentre la carte.
+- **Carte** : consultation seulement. Un lieu n'apparaît que lorsque sa zone est sortie du brouillard
+  (sauf votre position, et les *rumeurs*, montrées comme une zone approximative). Toucher un lieu
+  ouvre sa fiche ; *Déplacer le personnage ici…* demande confirmation (seulement si le MJ vous y
+  amène). *Où suis-je ?* recentre la carte.
 
 ## 5. Fiches, règles et traits
 
@@ -89,6 +91,10 @@ pleine partie.
 - **Carte** : *Cartes* → importer une image. Outils : *Révéler* / *Recouvrir* au pinceau,
   *Révéler autour de la position* (rayon réglable), *Placer* un lieu. Un marqueur est *caché*,
   *rumeur* (zone approximative) ou *connu*. *Voir comme le joueur* montre le mode Jeu.
+- **Sans spoil** : en Préparation aussi, le brouillard reste opaque et les lieux non découverts restent
+  cachés. On peut donc dissiper le brouillard au fil de la partie sans voir la suite. Pour construire
+  la carte, le bouton *Voir sous le brouillard* (avec confirmation) montre tout ; il se désactive en
+  quittant la Préparation.
 
 ## 7. Mises à jour
 
