@@ -39,9 +39,10 @@ export function Dialog({ open, onClose, title, children, actions }: DialogProps)
             aria-labelledby={titleId}
             tabIndex={-1}
             className="relative flex max-h-full w-full max-w-lg outline-none"
-            initial={{ opacity: 0, scale: 0.94, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97, y: 6, transition: { duration: 0.18 } }}
+            // `transform` entier : animation prise en charge par le navigateur, hors du fil principal.
+            initial={{ opacity: 0, transform: 'translateY(12px) scale(0.94)' }}
+            animate={{ opacity: 1, transform: 'translateY(0px) scale(1)' }}
+            exit={{ opacity: 0, transform: 'translateY(6px) scale(0.97)', transition: { duration: 0.18 } }}
             transition={{ duration: 0.4, ease: EASE_OUT }}
           >
             {/* Hauteur limitée à la zone visible : le texte défile, les boutons restent affichés. */}

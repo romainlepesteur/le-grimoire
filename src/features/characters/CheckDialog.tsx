@@ -120,9 +120,10 @@ export function CheckDialog() {
             // Hauteur limitée à la zone visible (clavier ouvert compris) : le contenu défile,
             // le bouton de lancer et les actions restent toujours accessibles.
             className="relative flex max-h-full w-full max-w-lg flex-col overflow-hidden rounded-xl tex-leather frame-gilt shadow-2xl outline-none"
-            initial={{ opacity: 0, scale: 0.94, y: 14 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97, transition: { duration: 0.18 } }}
+            // `transform` entier : animation prise en charge par le navigateur, hors du fil principal.
+            initial={{ opacity: 0, transform: 'translateY(14px) scale(0.94)' }}
+            animate={{ opacity: 1, transform: 'translateY(0px) scale(1)' }}
+            exit={{ opacity: 0, transform: 'translateY(0px) scale(0.97)', transition: { duration: 0.18 } }}
             transition={{ duration: 0.4, ease: EASE_OUT }}
           >
             <header className="flex shrink-0 items-start gap-3 border-b border-bronze-500/30 px-5 pt-4 pb-3">
